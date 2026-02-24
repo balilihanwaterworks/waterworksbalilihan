@@ -70,7 +70,7 @@
                             <div class="flex items-center gap-1.5 text-xs text-dark-500 mt-0.5">
                                 <span class="font-mono font-medium text-success-700">{{ consumer.id_number }}</span>
                                 <span class="text-dark-300">&#8226;</span>
-                                <span class="truncate">{{ consumer.barangay.name|default:"ΓÇö" }}</span>
+                                <span class="truncate">{{ consumer.barangay.name|default:"—" }}</span>
                             </div>
                         </div>
                     </div>
@@ -83,7 +83,7 @@
                         {% with bill=consumer_bills|get_item:consumer.id %}
                         {% if bill %}
                         <div class="text-right">
-                            <div class="text-sm font-bold text-warning-700">Γé▒{{ bill.total_amount_due|floatformat:2|intcomma }}</div>
+                            <div class="text-sm font-bold text-warning-700">₱{{ bill.total_amount_due|floatformat:2|intcomma }}</div>
                             <span class="text-[10px] uppercase tracking-wider font-semibold text-warning-600">Due</span>
                         </div>
                         {% endif %}
@@ -157,11 +157,11 @@
                     </div>
                     <div class="flex items-baseline gap-2">
                         <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Barangay:</span>
-                        <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"ΓÇö" }}</span>
+                        <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</span>
                     </div>
                     <div class="flex items-baseline gap-2">
                         <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">ID Number:</span>
-                        <span class="text-sm font-mono font-semibold text-success-700">{{ selected_consumer.id_number|default:"ΓÇö" }}</span>
+                        <span class="text-sm font-mono font-semibold text-success-700">{{ selected_consumer.id_number|default:"—" }}</span>
                     </div>
                 </div>
 
@@ -177,11 +177,9 @@
                                            class="w-3.5 h-3.5 rounded cursor-pointer accent-success-600">
                                 </th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-left font-bold text-dark-700">Month</th>
-                                <th class="border border-dark-300 px-2 py-1.5 text-center font-bold text-dark-700">m┬│</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-center font-bold text-dark-700">m³</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Bill</th>
-                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
-                                 
-                                 
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Penalty</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Total</th>
                             </tr>
@@ -205,10 +203,14 @@
                                  <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
                                      {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
                                  </td>
-                                 
-                                 
+                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
+                                     {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+                                 </td>
+                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
+                                     {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+                                 </td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}ΓÇö{% endif %}
+                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
                                 </td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono font-bold text-dark-900">{{ bill.total_amount_due|floatformat:2|intcomma }}</td>
                             </tr>
@@ -226,91 +228,126 @@
                     {% endif %}
                 </div>
 
-                {% if pending_bills %}
-                <!-- Amount Due -->
-                <div class="px-5 py-3 border-b border-dark-200">
+
+                <!-- Total Amount Due -->
+                <div class="px-5 py-3 bg-dark-50 border-b border-dark-200">
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-bold text-dark-800 uppercase">Total Amount Due:</span>
                         <span id="total-due-display" class="text-xl font-bold text-dark-900 font-mono">
-                            Γé▒{{ total_due|floatformat:2|intcomma }}
+                            ₱{{ total_due|floatformat:2|intcomma }}
                         </span>
                     </div>
                 </div>
 
-                <!-- Cash / Change Section -->
-                <div class="px-5 py-4 bg-success-50 border-b border-dark-200">
-                    <p class="text-xs font-bold text-dark-700 uppercase mb-3">Cash Transaction</p>
-
-                    <!-- Cash Received -->
-                    <div class="mb-3">
-                        <label for="received_amount" class="block text-xs font-semibold text-dark-700 mb-1 uppercase">
-                            Cash Received (Γé▒)
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500 font-bold text-sm">Γé▒</span>
-                            <input type="number"
-                                   id="received_amount"
-                                   name="received_amount"
-                                   min="{{ total_due|floatformat:2 }}"
-                                   step="0.01"
-                                   placeholder="0.00"
-                                   required
-                                   autofocus
-                                   class="w-full pl-8 pr-4 py-3 text-lg font-bold border-2 border-success-400 rounded-xl focus:outline-none focus:border-success-600 focus:ring-2 focus:ring-success-200 bg-white text-dark-900 text-right"
-                                   oninput="updateChange()">
-                        </div>
-                        <p id="amount-error" class="text-xs text-danger-600 mt-1 hidden">
-                            <i class="bi bi-exclamation-circle mr-1"></i>Cash received must be at least Γé▒<span id="min-amount">0.00</span>
-                        </p>
+                <!-- Cashier + Proceed button -->
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase">Cashier:</span>
+                        <span class="text-xs font-semibold text-dark-700 border-b border-dark-300 pb-0.5">
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
                     </div>
+                    <button type="button"
+                            onclick="openCashModal()"
+                            class="inline-flex items-center px-5 py-2.5 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+                        <i class="bi bi-cash-coin mr-2"></i>Proceed to Payment
+                    </button>
+                </div>
+                {% endif %}
 
-                    <!-- Change -->
-                    <div class="bg-white rounded-xl border-2 border-dark-200 px-4 py-3 flex items-center justify-between">
-                        <span class="text-sm font-bold text-dark-700 uppercase">Change:</span>
-                        <span id="change-display" class="text-2xl font-bold font-mono text-success-600">Γé▒0.00</span>
+            </div>
+
+            <!-- Hidden fields carried into form on modal submit -->
+            <input type="hidden" name="received_amount" id="hidden-received">
+            <input type="hidden" name="remarks"         id="hidden-remarks">
+
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════
+         CASH MODAL
+    ════════════════════════════════════════════════════════ -->
+    {% if selected_consumer and pending_bills %}
+    <div id="cash-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center"
+         style="background: rgba(0,0,0,0.45); backdrop-filter: blur(2px);">
+
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+             style="animation: modalPop .22s ease-out;">
+
+            <!-- Modal header -->
+            <div class="bg-gradient-to-r from-success-600 to-success-700 text-white px-6 py-4 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold">Cash Transaction</h3>
+                    <p class="text-xs text-white/80 mt-0.5 truncate">
+                        {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}
+                    </p>
+                </div>
+                <button type="button" onclick="closeCashModal()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="px-6 py-5 space-y-4">
+
+                <!-- Total Due -->
+                <div class="bg-dark-50 rounded-xl px-4 py-3 flex items-center justify-between border border-dark-200">
+                    <span class="text-xs font-bold text-dark-700 uppercase tracking-wide">Total Due</span>
+                    <span id="modal-total-due" class="text-2xl font-bold font-mono text-dark-900">₱{{ total_due|floatformat:2|intcomma }}</span>
+                </div>
+
+                <!-- Cash Received -->
+                <div>
+                    <label class="block text-xs font-bold text-dark-700 uppercase mb-1.5">Cash Received (₱)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500 font-bold">₱</span>
+                        <input type="number"
+                               id="received_amount"
+                               min="{{ total_due|floatformat:2 }}"
+                               step="0.01"
+                               placeholder="0.00"
+                               class="w-full pl-8 pr-4 py-3 text-2xl font-bold border-2 border-success-400 rounded-xl focus:outline-none focus:border-success-600 focus:ring-2 focus:ring-success-200 bg-white text-dark-900 text-right"
+                               oninput="updateChange()">
                     </div>
+                    <p id="amount-error" class="text-xs text-danger-600 mt-1 hidden">
+                        <i class="bi bi-exclamation-circle mr-1"></i>Must be at least ₱<span id="min-amount">{{ total_due|floatformat:2 }}</span>
+                    </p>
+                </div>
+
+                <!-- Change -->
+                <div class="bg-success-50 rounded-xl border-2 border-success-300 px-4 py-4 flex items-center justify-between">
+                    <span class="text-sm font-bold text-dark-700 uppercase tracking-wide">Change</span>
+                    <span id="change-display" class="text-3xl font-bold font-mono text-success-600">₱0.00</span>
                 </div>
 
                 <!-- Remarks -->
-                <div class="px-5 py-3 border-b border-dark-200">
-                    <label for="remarks" class="block text-xs font-semibold text-dark-700 mb-1 uppercase">
+                <div>
+                    <label class="block text-xs font-semibold text-dark-700 uppercase mb-1">
                         Remarks <span class="text-dark-400 font-normal">(optional)</span>
                     </label>
                     <input type="text"
                            id="remarks"
-                           name="remarks"
-                           placeholder="e.g. partial payment, penalty waived by admin..."
-                           class="w-full px-3 py-2 text-sm border border-dark-200 rounded-lg focus:outline-none focus:border-success-500 focus:ring-1 focus:ring-success-200 bg-white">
+                           placeholder="e.g. partial payment, penalty waived..."
+                           class="w-full px-3 py-2 text-sm border border-dark-200 rounded-lg focus:outline-none focus:border-success-500 focus:ring-1 focus:ring-success-200">
                 </div>
 
-                <!-- Issued By -->
-                <div class="px-5 py-3">
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-xs text-dark-500 font-semibold uppercase">Cashier:</span>
-                        <span class="text-xs font-semibold text-dark-700 border-b border-dark-300 flex-1 pb-0.5">
-                            {{ request.user.get_full_name|default:request.user.username }}
-                        </span>
-                    </div>
+                <!-- Buttons -->
+                <div class="flex gap-2 pt-1">
+                    <button type="button"
+                            onclick="closeCashModal()"
+                            class="flex-1 py-2.5 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-semibold rounded-lg border border-light-300 transition-colors">
+                        <i class="bi bi-x-lg mr-1"></i>Cancel
+                    </button>
+                    <button type="button"
+                            id="submit-btn"
+                            onclick="submitPayment()"
+                            disabled
+                            class="flex-1 py-2.5 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="bi bi-printer mr-1"></i>Print Receipt
+                    </button>
                 </div>
-                {% endif %}
-            </div>
 
-            <!-- Action Buttons -->
-            {% if pending_bills %}
-            <div class="flex gap-3 justify-center">
-                <a href="{% url 'consumers:process_payment' %}"
-                   class="inline-flex items-center px-5 py-2.5 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-semibold rounded-lg transition-colors border border-light-300">
-                    <i class="bi bi-x-lg mr-2"></i>Cancel
-                </a>
-                <button type="submit"
-                        id="submit-btn"
-                        class="inline-flex items-center px-6 py-2.5 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled>
-                    <i class="bi bi-cash-coin mr-2"></i>Process Payment & Print Receipt
-                </button>
             </div>
-            {% endif %}
-        </form>
+        </div>
     </div>
     {% endif %}
 
@@ -318,6 +355,12 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+@keyframes modalPop {
+    from { transform: scale(.92); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+</style>
 <script>
 // ---- Filters ----
 function applyFilters() {
@@ -401,8 +444,11 @@ function initBillSelection() {
         });
 
         // Update total-due display
-        const totalDueDisplay = document.getElementById('total-due-display');
-        if (totalDueDisplay) totalDueDisplay.textContent = 'Γé▒' + total.toFixed(2);
+        const fmt = v => '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const td  = document.getElementById('total-due-display');
+        const mtd = document.getElementById('modal-total-due');
+        if (td)  td.textContent  = fmt(total);
+        if (mtd) mtd.textContent = fmt(total);
 
         // Update hidden bill IDs
         const hiddenIds = document.getElementById('hidden-bill-ids');
@@ -433,7 +479,8 @@ function updateChange() {
     const amountError = document.getElementById('amount-error');
 
     if (changeDisplay) {
-        changeDisplay.textContent = 'Γé▒' + Math.max(change, 0).toFixed(2);
+        const fmtC = v => '₱' + Math.max(v, 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        changeDisplay.textContent = fmtC(change);
         changeDisplay.classList.toggle('text-success-600', change >= 0);
         changeDisplay.classList.toggle('text-danger-600', change < 0);
     }
@@ -447,14 +494,46 @@ function updateChange() {
     }
 }
 
-// ---- Receipt redirect after form submit ----
-document.getElementById('payment-form')?.addEventListener('submit', function (e) {
-    const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split mr-2"></i>Processing...';
-    }
+// ---- Modal open / close ----
+function openCashModal() {
+    const modal = document.getElementById('cash-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+        const inp = document.getElementById('received_amount');
+        if (inp) { inp.value = ''; inp.focus(); }
+        updateChange();
+    }, 50);
+}
+function closeCashModal() {
+    const modal = document.getElementById('cash-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    const inp = document.getElementById('received_amount');
+    if (inp) { inp.value = ''; updateChange(); }
+}
+
+// ---- Submit: copy modal values into hidden form fields ----
+function submitPayment() {
+    const received = document.getElementById('received_amount')?.value || '';
+    const remarks  = document.getElementById('remarks')?.value || '';
+    document.getElementById('hidden-received').value = received;
+    document.getElementById('hidden-remarks').value  = remarks;
+    const btn = document.getElementById('submit-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split mr-1"></i>Processing...'; }
+    document.getElementById('payment-form').submit();
+}
+
+// ---- Close modal on backdrop click or Escape ----
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('cash-modal');
+    if (modal && e.target === modal) closeCashModal();
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCashModal(); });
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', function () {
@@ -470,4 +549,3 @@ document.addEventListener('DOMContentLoaded', function () {
     updateChange();
 });
 </script>
-{% endblock %}

@@ -125,6 +125,9 @@
             <input type="hidden" name="consumer_id" value="{{ selected_consumer.id }}">
             <input type="hidden" name="bill_ids" id="hidden-bill-ids"
                    value="{% for b in pending_bills %}{{ b.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+            <!-- Hidden cash fields populated by modal -->
+            <input type="hidden" name="received_amount" id="hidden-received">
+            <input type="hidden" name="remarks"         id="hidden-remarks">
 
             <!-- Bill Card -->
             <div class="bg-white rounded-xl border-2 border-dark-300 shadow-md overflow-hidden mb-4">
@@ -179,9 +182,7 @@
                                 <th class="border border-dark-300 px-2 py-1.5 text-left font-bold text-dark-700">Month</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-center font-bold text-dark-700">m³</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Bill</th>
-                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
-                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
-                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Penalty</th>
                                 <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Total</th>
                             </tr>
@@ -202,17 +203,11 @@
                                 <td class="border border-dark-300 px-2 py-1.5 font-semibold text-dark-800">{{ bill.billing_period|date:"M Y" }}</td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-center font-semibold text-dark-800">{{ bill.consumption }}</td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono text-dark-800">{{ bill.total_amount|floatformat:2|intcomma }}</td>
-                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                     {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-                                 </td>
-                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                     {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-                                 </td>
-                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                     {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-                                 </td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
+                                    {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+                                </td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
+                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
                                 </td>
                                 <td class="border border-dark-300 px-2 py-1.5 text-right font-mono font-bold text-dark-900">{{ bill.total_amount_due|floatformat:2|intcomma }}</td>
                             </tr>
@@ -230,7 +225,6 @@
                     {% endif %}
                 </div>
 
-
                 <!-- Total Amount Due -->
                 <div class="px-5 py-3 bg-dark-50 border-b border-dark-200">
                     <div class="flex items-center justify-between">
@@ -242,6 +236,7 @@
                 </div>
 
                 <!-- Cashier + Proceed button -->
+                {% if pending_bills %}
                 <div class="px-5 py-3 flex items-center justify-between">
                     <div class="flex items-baseline gap-2">
                         <span class="text-xs text-dark-500 font-semibold uppercase">Cashier:</span>
@@ -257,19 +252,13 @@
                 </div>
                 {% endif %}
 
-            </div>
-
-            <!-- Hidden fields carried into form on modal submit -->
-            <input type="hidden" name="received_amount" id="hidden-received">
-            <input type="hidden" name="remarks"         id="hidden-remarks">
+            </div><!-- /bill card -->
 
         </form>
     </div>
     {% endif %}
 
-    <!-- ═══════════════════════════════════════════════════
-         CASH MODAL
-    ════════════════════════════════════════════════════════ -->
+    <!-- CASH MODAL -->
     {% if selected_consumer and pending_bills %}
     <div id="cash-modal"
          class="fixed inset-0 z-50 hidden items-center justify-center"
@@ -354,8 +343,6 @@
     {% endif %}
 
 </div>
-{% endblock %}
-
 {% block extra_js %}
 <style>
 @keyframes modalPop {

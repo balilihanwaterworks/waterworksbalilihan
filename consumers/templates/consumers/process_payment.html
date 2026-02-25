@@ -180,88 +180,122 @@
         <div class="max-w-3xl mx-auto space-y-4">
 
             {# ====================================================== #}
-            {# CARD 1 — BILL STATEMENT                                 #}
+            {# CARD 1 — BILL STATEMENT (matches physical water bill)   #}
             {# ====================================================== #}
             <div class="bg-white rounded-2xl border-2 border-dark-200 shadow-md overflow-hidden">
 
-                {# Letterhead #}
-                <div class="px-6 py-4 border-b-2 border-dark-200 text-center">
-                    <div class="flex items-center justify-center gap-4">
-                        <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-12 h-12 object-contain">
+                {# ── Letterhead — centered, matches physical bill ── #}
+                <div class="px-6 py-4 border-b-2 border-dark-300 text-center">
+                    <div class="flex items-center justify-center gap-3 mb-1">
+                        <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-11 h-11 object-contain">
                         <div>
-                            <h2 class="text-base font-bold text-dark-900 uppercase tracking-wide">Balilihan Waterworks System</h2>
-                            <p class="text-xs text-dark-500 uppercase tracking-widest mt-0.5">Local Government Unit — Balilihan</p>
+                            <h2 class="text-sm font-extrabold text-dark-900 uppercase tracking-widest leading-tight">Balilihan Waterworks System</h2>
+                            <p class="text-xs font-bold text-dark-700 uppercase tracking-wide">LGU — Balilihan</p>
+                            <p class="text-[10px] text-dark-500">Balilihan, Bohol &nbsp;|&nbsp; <span class="font-semibold">Postal Code: 6342</span></p>
                         </div>
-                        <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-12 h-12 object-contain">
+                        <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-11 h-11 object-contain">
                     </div>
                 </div>
 
-                {# Title + Date row #}
-                <div class="px-6 py-2.5 border-b border-dark-200 bg-dark-50 flex items-center justify-between">
-                    <h3 class="text-xs font-bold text-dark-700 uppercase tracking-wider flex items-center gap-2">
-                        <i class="bi bi-file-earmark-text text-success-600"></i> Payment Collection
-                    </h3>
-                    <p class="text-xs text-dark-500">Date: <span class="font-semibold text-dark-800">{% now "N j, Y" %}</span></p>
+                {# ── Water Bill label + Date ── #}
+                <div class="px-6 py-2.5 border-b border-dark-200 flex items-center justify-between bg-dark-50">
+                    <span class="text-sm font-extrabold text-dark-900 uppercase tracking-widest">
+                        <i class="bi bi-file-earmark-text mr-1.5 text-success-600"></i>Water Bill
+                    </span>
+                    <span class="text-xs text-dark-600">Date: <span class="font-bold text-dark-800">{% now "N j, Y" %}</span></span>
                 </div>
 
-                {# Consumer Info Grid #}
-                <div class="px-6 py-4 border-b border-dark-200 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Full Name</p>
-                        <p class="text-sm font-bold text-dark-900">
-                            {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}
-                            {% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}
-                        </p>
+                {# ── Consumer Fields — NAME / BARANGAY style ── #}
+                <div class="px-6 py-3 border-b border-dark-200 space-y-2">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-[10px] font-extrabold text-dark-500 uppercase tracking-widest w-24 flex-shrink-0">Name:</span>
+                        <span class="text-sm font-bold text-dark-900 border-b border-dark-300 flex-1 pb-0.5">
+                            {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}{% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}
+                        </span>
                     </div>
-                    <div>
-                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">ID Number</p>
-                        <p class="text-sm font-mono font-bold text-success-700">{{ selected_consumer.id_number|default:"—" }}</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-[10px] font-extrabold text-dark-500 uppercase tracking-widest w-24 flex-shrink-0">ID No.:</span>
+                        <span class="text-sm font-mono font-bold text-success-700 border-b border-dark-300 flex-1 pb-0.5">
+                            {{ selected_consumer.id_number|default:"—" }}
+                        </span>
                     </div>
-                    <div>
-                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Barangay</p>
-                        <p class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Purok</p>
-                        <p class="text-sm font-semibold text-dark-800">{{ selected_consumer.purok.name|default:"—" }}</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-[10px] font-extrabold text-dark-500 uppercase tracking-widest w-24 flex-shrink-0">Barangay:</span>
+                        <span class="text-sm font-semibold text-dark-800 border-b border-dark-300 flex-1 pb-0.5">
+                            {{ selected_consumer.barangay.name|default:"—" }}{% if selected_consumer.purok %}, Purok {{ selected_consumer.purok.name }}{% endif %}
+                        </span>
                     </div>
                 </div>
 
-                {# Bills Table #}
+                {# ── FOR THE MONTH Table (matches physical bill) ── #}
                 <div class="px-6 py-4 border-b border-dark-200">
-                    <p class="text-xs font-bold text-dark-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <i class="bi bi-table text-dark-400"></i> Bills to Pay
+                    <p class="text-[11px] font-extrabold text-dark-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        For the Month
                         {% if pending_bills %}
-                        <span class="ml-1 px-2 py-0.5 bg-warning-100 text-warning-700 text-[10px] font-bold rounded-full">
-                            {{ pending_bills|length }} month{{ pending_bills|length|pluralize }}
+                        <span class="px-2 py-0.5 bg-warning-100 text-warning-700 text-[10px] font-bold rounded-full">
+                            {{ pending_bills|length }} bill{{ pending_bills|length|pluralize }}
                         </span>
                         {% endif %}
                     </p>
 
                     {% if pending_bills %}
-                    <div class="overflow-x-auto rounded-lg border border-dark-200">
-                    <table class="w-full border-collapse text-sm">
+                    <div class="overflow-x-auto rounded border border-dark-300">
+                    <table class="w-full border-collapse text-xs">
                         <thead>
-                            <tr class="bg-dark-800 text-white text-xs">
-                                <th class="px-3 py-2.5 text-center w-10 border-r border-dark-600">
-                                    <input type="checkbox" id="select-all-bills" checked
-                                           title="Select/Deselect all"
-                                           class="w-3.5 h-3.5 rounded cursor-pointer accent-success-400">
+                            <tr class="bg-dark-800 text-white">
+                                <th class="border border-dark-600 px-2 py-2 text-center w-8 font-bold">#</th>
+                                <th class="border border-dark-600 px-2 py-2 text-center font-bold">Month / Year</th>
+                                <th class="border border-dark-600 px-2 py-2 text-center font-bold">
+                                    Consumed<br><span class="font-normal text-[10px]">(Cu.m.)</span>
                                 </th>
-                                <th class="px-3 py-2.5 text-left font-bold border-r border-dark-600 tracking-wide">Month</th>
-                                <th class="px-3 py-2.5 text-center font-bold border-r border-dark-600 tracking-wide">m³</th>
-                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide">Bill Amt</th>
-                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide text-success-300">SC Disc.</th>
-                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide text-danger-300">Penalty</th>
-                                <th class="px-3 py-2.5 text-right font-bold tracking-wide text-warning-300">Total Due</th>
+                                <th class="border border-dark-600 px-2 py-2 text-right font-bold">Amount</th>
+                                <th class="border border-dark-600 px-2 py-2 text-right font-bold text-success-300">
+                                    SC Discount
+                                </th>
+                                <th class="border border-dark-600 px-2 py-2 text-right font-bold text-danger-300">Penalty</th>
+                                <th class="border border-dark-600 px-2 py-2 text-right font-bold text-warning-300">Total</th>
+                                <th class="border border-dark-600 px-2 py-2 text-center w-8 font-bold text-[10px] text-dark-300">✓</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for bill in pending_bills %}
-                            <tr class="bill-row border-b border-dark-100 transition-colors
-                                       {% if bill.is_overdue %}bg-danger-50 hover:bg-danger-100{% else %}bg-white hover:bg-light-50{% endif %}"
+                            <tr class="bill-row border-b border-dark-200 transition-colors
+                                       {% if bill.is_overdue %}bg-danger-50{% else %}bg-white{% endif %}
+                                       hover:bg-light-50"
                                 data-index="{{ forloop.counter0 }}">
-                                <td class="px-3 py-2.5 text-center border-r border-dark-100">
+                                {# Row number #}
+                                <td class="border border-dark-200 px-2 py-2 text-center font-bold text-dark-500">{{ forloop.counter }}</td>
+                                {# Month #}
+                                <td class="border border-dark-200 px-2 py-2 text-center font-semibold text-dark-800 whitespace-nowrap">
+                                    {{ bill.billing_period|date:"M Y" }}
+                                    {% if bill.is_overdue %}<br><span class="text-[9px] text-danger-600 font-bold">OVERDUE</span>{% endif %}
+                                </td>
+                                {# Consumption #}
+                                <td class="border border-dark-200 px-2 py-2 text-center font-mono font-semibold text-dark-700">
+                                    {{ bill.consumption }}
+                                </td>
+                                {# Bill Amount #}
+                                <td class="border border-dark-200 px-2 py-2 text-right font-mono text-dark-800">
+                                    {{ bill.total_amount|floatformat:2|intcomma }}
+                                </td>
+                                {# SC Discount — always shown, — for non-SC #}
+                                <td class="border border-dark-200 px-2 py-2 text-right font-mono
+                                           {% if bill.senior_citizen_discount > 0 %}text-success-700 font-bold bg-success-50{% else %}text-dark-300{% endif %}">
+                                    {% if bill.senior_citizen_discount > 0 %}
+                                    ({{ bill.senior_citizen_discount|floatformat:2|intcomma }})
+                                    {% else %}—{% endif %}
+                                </td>
+                                {# Penalty #}
+                                <td class="border border-dark-200 px-2 py-2 text-right font-mono
+                                           {% if bill.effective_penalty > 0 %}text-danger-600 font-bold{% else %}text-dark-300{% endif %}">
+                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
+                                </td>
+                                {# Total Due #}
+                                <td class="border border-dark-200 px-2 py-2 text-right font-mono font-bold text-dark-900">
+                                    {{ bill.total_amount_due|floatformat:2|intcomma }}
+                                </td>
+                                {# Checkbox #}
+                                <td class="border border-dark-200 px-2 py-2 text-center">
                                     <input type="checkbox"
                                            class="bill-checkbox w-3.5 h-3.5 rounded cursor-pointer accent-success-600"
                                            checked
@@ -271,41 +305,28 @@
                                            data-penalty="{{ bill.effective_penalty }}"
                                            data-total="{{ bill.total_amount_due }}">
                                 </td>
-                                <td class="px-3 py-2.5 font-semibold text-dark-800 border-r border-dark-100 whitespace-nowrap">
-                                    {{ bill.billing_period|date:"M Y" }}
-                                    {% if bill.is_overdue %}
-                                    <span class="ml-1 text-[9px] font-bold text-danger-600 uppercase bg-danger-100 px-1 py-0.5 rounded">Overdue</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-3 py-2.5 text-center font-mono font-semibold text-dark-700 border-r border-dark-100">{{ bill.consumption }}</td>
-                                <td class="px-3 py-2.5 text-right font-mono text-dark-800 border-r border-dark-100">{{ bill.total_amount|floatformat:2|intcomma }}</td>
-                                <td class="px-3 py-2.5 text-right font-mono border-r border-dark-100
-                                           {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-300{% endif %}">
-                                    {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}—{% endif %}
-                                </td>
-                                <td class="px-3 py-2.5 text-right font-mono border-r border-dark-100
-                                           {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-300{% endif %}">
-                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
-                                </td>
-                                <td class="px-3 py-2.5 text-right font-mono font-bold text-dark-900">
-                                    {{ bill.total_amount_due|floatformat:2|intcomma }}
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
-                            <tr class="bg-dark-900 text-white font-bold text-sm">
-                                <td colspan="6" class="px-3 py-3 text-right uppercase tracking-wide text-xs text-dark-300">
-                                    <i class="bi bi-calculator mr-1.5"></i>Total Amount Due
+                            <tr class="bg-dark-900 text-white">
+                                <td colspan="6" class="border border-dark-600 px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-widest">
+                                    <i class="bi bi-calculator mr-1"></i> Total Amount:
                                 </td>
-                                <td class="px-3 py-3 text-right font-mono text-lg text-warning-300" id="total-due-display">
+                                <td class="border border-dark-600 px-3 py-2.5 text-right font-mono font-extrabold text-base text-warning-300"
+                                    id="total-due-display">
                                     ₱{{ total_due|floatformat:2|intcomma }}
+                                </td>
+                                <td class="border border-dark-600 px-2 py-2 text-center">
+                                    <input type="checkbox" id="select-all-bills" checked
+                                           title="Select/Deselect all"
+                                           class="w-3.5 h-3.5 rounded cursor-pointer accent-success-400">
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
                     </div>
-                    <p class="text-[10px] text-dark-400 mt-2 italic">
+                    <p class="text-[10px] text-dark-400 mt-1.5 italic">
                         <i class="bi bi-info-circle mr-1"></i>Uncheck newer months to issue a partial bill — oldest months are always required first.
                     </p>
 
@@ -318,15 +339,18 @@
                     {% endif %}
                 </div>
 
-                {# Cashier Footer #}
-                <div class="px-6 py-3 bg-dark-50 flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-xs text-dark-500">
-                        <i class="bi bi-person-badge text-dark-400"></i>
-                        Cashier: <span class="font-semibold text-dark-700 ml-0.5">{{ request.user.get_full_name|default:request.user.username }}</span>
+                {# ── Issued By / Cashier row ── #}
+                <div class="px-6 py-3 bg-dark-50 flex items-center justify-between border-t border-dark-200">
+                    <div class="flex items-center gap-2 text-xs text-dark-600">
+                        <i class="bi bi-person-badge-fill text-dark-400 text-sm"></i>
+                        <span class="font-bold uppercase tracking-wider text-[10px]">Issued By:</span>
+                        <span class="font-semibold text-dark-800 border-b border-dark-400 pb-0.5 min-w-[120px]">
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
                     </div>
                     {% if selected_consumer.is_delinquent %}
-                    <span class="flex items-center gap-1.5 px-3 py-1 bg-danger-100 text-danger-700 text-xs font-bold rounded-full">
-                        <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> Delinquent Account
+                    <span class="flex items-center gap-1.5 px-3 py-1 bg-danger-100 text-danger-700 text-[10px] font-bold rounded-full">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Delinquent Account
                     </span>
                     {% endif %}
                 </div>

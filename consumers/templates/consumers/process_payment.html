@@ -5,38 +5,45 @@
 {% block title %}Process Payment - Balilihan Waterworks{% endblock %}
 
 {% block main_content %}
-{# ==================== TWO-PANEL SPLIT LAYOUT ==================== #}
-<div class="flex gap-0 -m-5" style="height:calc(100vh - var(--header-height));">
+{# ======================== TWO-PANEL LAYOUT ======================== #}
+<div class="flex -m-5" style="height:calc(100vh - var(--header-height));">
 
-    {# ============================================================ #}
-    {# LEFT PANEL — Consumer List                                    #}
-    {# ============================================================ #}
-    <div class="flex flex-col w-72 flex-shrink-0 bg-white border-r border-light-200 shadow-sm overflow-hidden">
+    {# ================================================================ #}
+    {# LEFT PANEL — Pending Consumer List                                #}
+    {# ================================================================ #}
+    <div class="flex flex-col w-96 flex-shrink-0 bg-white border-r border-light-200 overflow-hidden">
 
-        {# Header / Filters #}
-        <div class="bg-gradient-to-b from-success-600 to-success-700 px-3 pt-3 pb-3 flex-shrink-0">
-            <div class="flex items-center gap-2 mb-2.5">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="bi bi-cash-coin text-white text-sm"></i>
+        {# ── Header ── #}
+        <div class="bg-gradient-to-br from-success-600 to-success-700 px-4 pt-4 pb-4 flex-shrink-0">
+
+            <div class="flex items-center gap-2.5 mb-3">
+                <div class="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="bi bi-cash-coin text-white text-base"></i>
                 </div>
-                <h2 class="text-sm font-bold text-white leading-tight">Process Payment</h2>
+                <div>
+                    <h2 class="text-sm font-bold text-white leading-none">Process Payment</h2>
+                    <p class="text-white/65 text-[11px] mt-0.5">Select a consumer below</p>
+                </div>
             </div>
 
             {# Search #}
-            <div class="relative mb-2">
-                <i class="bi bi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-white/60 text-xs"></i>
+            <div class="relative mb-2.5">
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-white/60 text-sm"></i>
                 <input type="text"
                        id="search-consumer"
-                       placeholder="Search name or ID…"
+                       placeholder="Search by name or ID number…"
                        autocomplete="off"
-                       class="w-full pl-8 pr-3 py-2 text-xs bg-white/15 border border-white/25 rounded-lg text-white placeholder-white/55 focus:outline-none focus:bg-white/25 focus:border-white/50">
+                       class="w-full pl-9 pr-4 py-2.5 text-sm bg-white/15 border border-white/25 rounded-xl
+                              text-white placeholder-white/50 focus:outline-none focus:bg-white/25 focus:border-white/60
+                              transition-all">
             </div>
 
             {# Barangay Filter #}
             <select id="filter-barangay"
                     onchange="applyBarangayFilter()"
-                    class="w-full px-2.5 py-1.5 text-xs bg-white/15 border border-white/25 rounded-lg text-white focus:outline-none focus:bg-white/25 cursor-pointer">
-                <option value="" class="text-dark-800 bg-white">All Barangays</option>
+                    class="w-full px-3 py-2 text-sm bg-white/15 border border-white/25 rounded-xl
+                           text-white focus:outline-none focus:bg-white/25 cursor-pointer transition-all">
+                <option value="" class="text-dark-800 bg-white font-medium">🏘 All Barangays</option>
                 {% for barangay in barangays %}
                 <option value="{{ barangay.id }}"
                         class="text-dark-800 bg-white"
@@ -46,89 +53,119 @@
                 {% endfor %}
             </select>
 
-            <p class="text-white/70 text-[10px] mt-1.5">
-                <span id="visible-count" class="font-bold text-white">{{ consumers|length }}</span>
-                consumer{% if consumers|length != 1 %}s{% endif %} with pending bills
-            </p>
+            {# Count badge #}
+            <div class="flex items-center justify-between mt-2.5">
+                <p class="text-white/70 text-xs">
+                    <span id="visible-count" class="font-bold text-white text-sm">{{ consumers|length }}</span>
+                    consumer{% if consumers|length != 1 %}s{% endif %} with pending bills
+                </p>
+                {% if selected_barangay %}
+                <button onclick="clearBarangay()" class="text-white/60 hover:text-white text-xs flex items-center gap-1 transition-colors">
+                    <i class="bi bi-x-circle-fill text-[10px]"></i> Clear
+                </button>
+                {% endif %}
+            </div>
         </div>
 
-        {# Consumer List Scroll Area #}
+        {# ── Scrollable Consumer List ── #}
         <div class="flex-1 overflow-y-auto" id="consumer-list-container">
             {% if consumers %}
             <div id="consumer-list">
                 {% for consumer in consumers %}
                 {% with bill=consumer_bills|get_item:consumer.id %}
                 <a href="?consumer={{ consumer.id }}{% if selected_barangay %}&barangay={{ selected_barangay }}{% endif %}"
-                   class="consumer-card flex items-center justify-between px-3 py-2.5 border-b border-light-100 hover:bg-success-50 transition-colors duration-150 cursor-pointer
-                          {% if selected_consumer and selected_consumer.id == consumer.id %}bg-success-50 border-l-4 border-l-success-500{% endif %}"
+                   class="consumer-card flex items-center justify-between px-4 py-3.5 border-b border-light-100
+                          hover:bg-success-50 transition-all duration-150 group
+                          {% if selected_consumer and selected_consumer.id == consumer.id %}
+                              bg-success-50 border-l-[3px] border-l-success-500
+                          {% else %}
+                              border-l-[3px] border-l-transparent
+                          {% endif %}"
                    data-name="{{ consumer.first_name|lower }} {{ consumer.last_name|lower }}"
                    data-id="{{ consumer.id_number|lower }}">
-                    <div class="flex items-center gap-2 min-w-0 flex-1">
-                        <div class="w-8 h-8 bg-success-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="bi bi-person-fill text-success-600 text-xs"></i>
+
+                    {# Avatar + Info #}
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                                    {% if selected_consumer and selected_consumer.id == consumer.id %}
+                                        bg-success-500 text-white
+                                    {% else %}
+                                        bg-success-100 text-success-600 group-hover:bg-success-200
+                                    {% endif %}
+                                    transition-colors">
+                            <i class="bi bi-person-fill text-base"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs font-semibold text-dark-900 truncate leading-tight">
+                            <p class="text-sm font-semibold text-dark-900 truncate leading-snug">
                                 {{ consumer.last_name }}, {{ consumer.first_name }}
+                                {% if consumer.suffix %}<span class="font-normal text-dark-500 text-xs">&nbsp;{{ consumer.suffix }}</span>{% endif %}
                             </p>
-                            <div class="flex items-center gap-1 text-[10px] text-dark-500 mt-0.5">
-                                <span class="font-mono font-medium text-success-700">{{ consumer.id_number }}</span>
-                                {% if consumer.is_delinquent %}
-                                <span class="text-danger-600 font-bold">• DLQ</span>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="font-mono text-xs font-bold text-success-700">{{ consumer.id_number }}</span>
+                                {% if consumer.barangay %}
+                                <span class="text-dark-300 text-xs">•</span>
+                                <span class="text-xs text-dark-500 truncate max-w-[100px]">{{ consumer.barangay.name }}</span>
                                 {% endif %}
                             </div>
+                            {% if consumer.is_delinquent %}
+                            <span class="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 bg-danger-100 text-danger-700 text-[10px] font-bold rounded">
+                                <i class="bi bi-exclamation-triangle-fill text-[9px]"></i> Delinquent
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
+
+                    {# Due Amount #}
                     {% if bill %}
-                    <div class="text-right flex-shrink-0 ml-2">
-                        <div class="text-xs font-bold text-warning-700">₱{{ bill.total_amount_due|floatformat:2|intcomma }}</div>
-                        <div class="text-[9px] uppercase font-semibold text-warning-500">Due</div>
+                    <div class="text-right flex-shrink-0 ml-3">
+                        <div class="text-sm font-bold text-warning-700">₱{{ bill.total_amount_due|floatformat:2|intcomma }}</div>
+                        <div class="text-[10px] font-semibold text-warning-500 uppercase tracking-wide">Due</div>
                     </div>
                     {% endif %}
                 </a>
                 {% endwith %}
                 {% endfor %}
             </div>
-            <div id="no-results" class="hidden text-center py-12 px-3">
-                <i class="bi bi-search text-3xl text-light-300 mb-2 block"></i>
-                <p class="text-xs font-semibold text-dark-500">No results found</p>
-                <p class="text-[10px] text-dark-400 mt-0.5">Try a different name or ID</p>
+
+            {# No results state #}
+            <div id="no-results" class="hidden text-center py-14 px-4">
+                <i class="bi bi-search text-4xl text-light-300 mb-3 block"></i>
+                <p class="text-sm font-semibold text-dark-500">No results found</p>
+                <p class="text-xs text-dark-400 mt-1">Try a different name or ID number</p>
             </div>
+
             {% else %}
-            <div class="text-center py-12 px-3">
-                <div class="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="bi bi-check-circle-fill text-xl text-success-500"></i>
+            {# All clear state #}
+            <div class="text-center py-14 px-4">
+                <div class="w-14 h-14 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-check-circle-fill text-2xl text-success-500"></i>
                 </div>
-                <p class="text-xs font-bold text-dark-600 mb-0.5">No Pending Bills</p>
-                <p class="text-[10px] text-dark-400">All consumers are up to date</p>
+                <p class="text-sm font-bold text-dark-600">No Pending Bills</p>
+                <p class="text-xs text-dark-400 mt-1.5">All consumers are up to date</p>
             </div>
             {% endif %}
         </div>
     </div>
 
-    {# ============================================================ #}
-    {# RIGHT PANEL — Bill Statement + Cash/Change                    #}
-    {# ============================================================ #}
-    <div class="flex-1 overflow-y-auto bg-light-100 px-4 py-4">
+    {# ================================================================ #}
+    {# RIGHT PANEL — Bill Statement + Transaction (stacked vertically)  #}
+    {# ================================================================ #}
+    <div class="flex-1 overflow-y-auto bg-light-100 px-5 py-5">
 
         {% if not selected_consumer %}
-        {# ---- Empty State ---- #}
+        {# ── Empty / Prompt State ── #}
         <div class="flex flex-col items-center justify-center h-full text-center">
-            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md mb-5">
-                <i class="bi bi-person-check text-4xl text-light-400"></i>
+            <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md mb-6 border-4 border-light-200">
+                <i class="bi bi-cursor-fill text-4xl text-light-400"></i>
             </div>
-            <h3 class="text-base font-bold text-dark-600 mb-1">Select a Consumer</h3>
-            <p class="text-sm text-dark-400 max-w-xs">Choose a consumer from the list on the left to view their bill and process payment.</p>
+            <h3 class="text-lg font-bold text-dark-600 mb-2">Select a Consumer</h3>
+            <p class="text-sm text-dark-400 max-w-sm leading-relaxed">
+                Choose a consumer from the list on the left to view their pending bill and proceed with payment.
+            </p>
         </div>
 
         {% else %}
-        {# ---- Bill + Payment Panel ---- #}
-
-        {# Back link styled small #}
-        <a href="{% url 'consumers:process_payment' %}{% if selected_barangay %}?barangay={{ selected_barangay }}{% endif %}"
-           class="inline-flex items-center gap-1 text-xs text-dark-500 hover:text-dark-700 mb-3 transition-colors">
-            <i class="bi bi-arrow-left text-[10px]"></i> Back to list
-        </a>
+        {# ── Consumer Selected: Bill + Transaction ── #}
 
         <form method="post"
               action="{% url 'consumers:process_payment' %}?consumer={{ selected_consumer.id }}"
@@ -140,294 +177,327 @@
             <input type="hidden" name="received_amount" id="hidden-received">
             <input type="hidden" name="remarks" id="hidden-remarks">
 
-        <div class="flex flex-col xl:flex-row gap-4 max-w-5xl">
+        <div class="max-w-3xl mx-auto space-y-4">
 
-            {# ===== BILL STATEMENT CARD ===== #}
-            <div class="flex-1">
-                <div class="bg-white rounded-2xl border-2 border-dark-200 shadow-md overflow-hidden">
+            {# ====================================================== #}
+            {# CARD 1 — BILL STATEMENT                                 #}
+            {# ====================================================== #}
+            <div class="bg-white rounded-2xl border-2 border-dark-200 shadow-md overflow-hidden">
 
-                    {# Letterhead #}
-                    <div class="px-5 py-4 border-b-2 border-dark-200 text-center bg-white">
-                        <div class="flex items-center justify-center gap-3 mb-1">
-                            <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-10 h-10 object-contain">
-                            <div>
-                                <h2 class="text-sm font-bold text-dark-900 uppercase tracking-wide">Balilihan Waterworks System</h2>
-                                <p class="text-[10px] text-dark-500 uppercase tracking-widest">Local Government Unit — Balilihan</p>
-                            </div>
-                            <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-10 h-10 object-contain">
+                {# Letterhead #}
+                <div class="px-6 py-4 border-b-2 border-dark-200 text-center">
+                    <div class="flex items-center justify-center gap-4">
+                        <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-12 h-12 object-contain">
+                        <div>
+                            <h2 class="text-base font-bold text-dark-900 uppercase tracking-wide">Balilihan Waterworks System</h2>
+                            <p class="text-xs text-dark-500 uppercase tracking-widest mt-0.5">Local Government Unit — Balilihan</p>
                         </div>
+                        <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-12 h-12 object-contain">
                     </div>
+                </div>
 
-                    {# Title + Date #}
-                    <div class="px-5 py-2.5 border-b border-dark-200 flex items-center justify-between bg-dark-50">
-                        <h3 class="text-xs font-bold text-dark-800 uppercase tracking-wider">
-                            <i class="bi bi-receipt mr-1.5 text-success-600"></i>Payment Collection
-                        </h3>
-                        <p class="text-[10px] text-dark-600">Date: <span class="font-semibold">{% now "N j, Y" %}</span></p>
-                    </div>
+                {# Title + Date row #}
+                <div class="px-6 py-2.5 border-b border-dark-200 bg-dark-50 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-dark-700 uppercase tracking-wider flex items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-success-600"></i> Payment Collection
+                    </h3>
+                    <p class="text-xs text-dark-500">Date: <span class="font-semibold text-dark-800">{% now "N j, Y" %}</span></p>
+                </div>
 
-                    {# Consumer Info #}
-                    <div class="px-5 py-3 border-b border-dark-200 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                        <div>
-                            <span class="text-[9px] text-dark-400 uppercase font-bold tracking-wider block">Consumer Name</span>
-                            <span class="text-sm font-bold text-dark-900">
-                                {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}{% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}
-                            </span>
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-dark-400 uppercase font-bold tracking-wider block">ID Number</span>
-                            <span class="text-sm font-mono font-semibold text-success-700">{{ selected_consumer.id_number|default:"—" }}</span>
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-dark-400 uppercase font-bold tracking-wider block">Barangay</span>
-                            <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</span>
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-dark-400 uppercase font-bold tracking-wider block">Purok</span>
-                            <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.purok.name|default:"—" }}</span>
-                        </div>
-                    </div>
-
-                    {# Bills Table #}
-                    <div class="px-5 py-3 border-b border-dark-200">
-                        <p class="text-[10px] font-bold text-dark-500 uppercase tracking-wider mb-2">
-                            <i class="bi bi-table mr-1"></i>Bills to Pay
+                {# Consumer Info Grid #}
+                <div class="px-6 py-4 border-b border-dark-200 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Full Name</p>
+                        <p class="text-sm font-bold text-dark-900">
+                            {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}
+                            {% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}
                         </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">ID Number</p>
+                        <p class="text-sm font-mono font-bold text-success-700">{{ selected_consumer.id_number|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Barangay</p>
+                        <p class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-dark-400 uppercase font-bold tracking-wider mb-0.5">Purok</p>
+                        <p class="text-sm font-semibold text-dark-800">{{ selected_consumer.purok.name|default:"—" }}</p>
+                    </div>
+                </div>
+
+                {# Bills Table #}
+                <div class="px-6 py-4 border-b border-dark-200">
+                    <p class="text-xs font-bold text-dark-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <i class="bi bi-table text-dark-400"></i> Bills to Pay
                         {% if pending_bills %}
-                        <div class="overflow-x-auto">
-                        <table class="w-full border-collapse text-[11px]" id="bill-table">
-                            <thead>
-                                <tr class="bg-dark-800 text-white">
-                                    <th class="border border-dark-600 px-1.5 py-1.5 text-center w-7">
-                                        <input type="checkbox" id="select-all-bills" checked title="Select/Deselect all"
-                                               class="w-3 h-3 rounded cursor-pointer accent-success-400">
-                                    </th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-left font-bold">Month</th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-center font-bold">m³</th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-right font-bold">Bill</th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-right font-bold text-success-300">SC Disc.</th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-right font-bold text-danger-300">Penalty</th>
-                                    <th class="border border-dark-600 px-2 py-1.5 text-right font-bold text-warning-300">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for bill in pending_bills %}
-                                <tr class="bill-row {% if bill.is_overdue %}bg-danger-50{% else %}bg-white{% endif %} hover:bg-light-50 transition-colors"
-                                    data-index="{{ forloop.counter0 }}">
-                                    <td class="border border-dark-200 px-1.5 py-1.5 text-center">
-                                        <input type="checkbox"
-                                               class="bill-checkbox w-3 h-3 rounded cursor-pointer accent-success-600"
-                                               checked
-                                               data-index="{{ forloop.counter0 }}"
-                                               data-bill-id="{{ bill.id }}"
-                                               data-amount="{{ bill.total_amount }}"
-                                               data-penalty="{{ bill.effective_penalty }}"
-                                               data-total="{{ bill.total_amount_due }}">
-                                    </td>
-                                    <td class="border border-dark-200 px-2 py-1.5 font-semibold text-dark-800">{{ bill.billing_period|date:"M Y" }}</td>
-                                    <td class="border border-dark-200 px-2 py-1.5 text-center font-semibold text-dark-700">{{ bill.consumption }}</td>
-                                    <td class="border border-dark-200 px-2 py-1.5 text-right font-mono text-dark-800">{{ bill.total_amount|floatformat:2|intcomma }}</td>
-                                    <td class="border border-dark-200 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-300{% endif %}">
-                                        {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="border border-dark-200 px-2 py-1.5 text-right font-mono {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-300{% endif %}">
-                                        {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="border border-dark-200 px-2 py-1.5 text-right font-mono font-bold text-dark-900">{{ bill.total_amount_due|floatformat:2|intcomma }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot>
-                                <tr class="bg-dark-900 text-white">
-                                    <td colspan="6" class="border border-dark-600 px-2 py-2 text-right text-xs font-bold uppercase tracking-wide">Total Amount Due</td>
-                                    <td class="border border-dark-600 px-2 py-2 text-right font-mono font-bold text-warning-300 text-sm" id="total-due-display">
-                                        ₱{{ total_due|floatformat:2|intcomma }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        </div>
-                        <p class="text-[9px] text-dark-400 mt-1.5 italic">
-                            <i class="bi bi-info-circle mr-0.5"></i>Uncheck newer months to issue a partial bill (oldest first)
-                        </p>
-                        {% else %}
-                        <div class="text-center py-8">
-                            <i class="bi bi-check-circle-fill text-2xl text-success-500 mb-2 block"></i>
-                            <p class="text-sm font-bold text-dark-600">No Pending Bills</p>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {# Cashier Row #}
-                    {% if pending_bills %}
-                    <div class="px-5 py-2.5 bg-dark-50 border-t border-dark-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i class="bi bi-person-badge text-dark-400 text-sm"></i>
-                            <span class="text-[10px] text-dark-500 uppercase font-bold">Cashier:</span>
-                            <span class="text-xs font-semibold text-dark-700">{{ request.user.get_full_name|default:request.user.username }}</span>
-                        </div>
-                        {% if selected_consumer.is_delinquent %}
-                        <span class="px-2 py-0.5 bg-danger-100 text-danger-700 text-[10px] font-bold rounded-full flex items-center gap-1">
-                            <i class="bi bi-exclamation-triangle-fill"></i> Delinquent Account
+                        <span class="ml-1 px-2 py-0.5 bg-warning-100 text-warning-700 text-[10px] font-bold rounded-full">
+                            {{ pending_bills|length }} month{{ pending_bills|length|pluralize }}
                         </span>
                         {% endif %}
+                    </p>
+
+                    {% if pending_bills %}
+                    <div class="overflow-x-auto rounded-lg border border-dark-200">
+                    <table class="w-full border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-dark-800 text-white text-xs">
+                                <th class="px-3 py-2.5 text-center w-10 border-r border-dark-600">
+                                    <input type="checkbox" id="select-all-bills" checked
+                                           title="Select/Deselect all"
+                                           class="w-3.5 h-3.5 rounded cursor-pointer accent-success-400">
+                                </th>
+                                <th class="px-3 py-2.5 text-left font-bold border-r border-dark-600 tracking-wide">Month</th>
+                                <th class="px-3 py-2.5 text-center font-bold border-r border-dark-600 tracking-wide">m³</th>
+                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide">Bill Amt</th>
+                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide text-success-300">SC Disc.</th>
+                                <th class="px-3 py-2.5 text-right font-bold border-r border-dark-600 tracking-wide text-danger-300">Penalty</th>
+                                <th class="px-3 py-2.5 text-right font-bold tracking-wide text-warning-300">Total Due</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bill in pending_bills %}
+                            <tr class="bill-row border-b border-dark-100 transition-colors
+                                       {% if bill.is_overdue %}bg-danger-50 hover:bg-danger-100{% else %}bg-white hover:bg-light-50{% endif %}"
+                                data-index="{{ forloop.counter0 }}">
+                                <td class="px-3 py-2.5 text-center border-r border-dark-100">
+                                    <input type="checkbox"
+                                           class="bill-checkbox w-3.5 h-3.5 rounded cursor-pointer accent-success-600"
+                                           checked
+                                           data-index="{{ forloop.counter0 }}"
+                                           data-bill-id="{{ bill.id }}"
+                                           data-amount="{{ bill.total_amount }}"
+                                           data-penalty="{{ bill.effective_penalty }}"
+                                           data-total="{{ bill.total_amount_due }}">
+                                </td>
+                                <td class="px-3 py-2.5 font-semibold text-dark-800 border-r border-dark-100 whitespace-nowrap">
+                                    {{ bill.billing_period|date:"M Y" }}
+                                    {% if bill.is_overdue %}
+                                    <span class="ml-1 text-[9px] font-bold text-danger-600 uppercase bg-danger-100 px-1 py-0.5 rounded">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2.5 text-center font-mono font-semibold text-dark-700 border-r border-dark-100">{{ bill.consumption }}</td>
+                                <td class="px-3 py-2.5 text-right font-mono text-dark-800 border-r border-dark-100">{{ bill.total_amount|floatformat:2|intcomma }}</td>
+                                <td class="px-3 py-2.5 text-right font-mono border-r border-dark-100
+                                           {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-300{% endif %}">
+                                    {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}—{% endif %}
+                                </td>
+                                <td class="px-3 py-2.5 text-right font-mono border-r border-dark-100
+                                           {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-300{% endif %}">
+                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}—{% endif %}
+                                </td>
+                                <td class="px-3 py-2.5 text-right font-mono font-bold text-dark-900">
+                                    {{ bill.total_amount_due|floatformat:2|intcomma }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-dark-900 text-white font-bold text-sm">
+                                <td colspan="6" class="px-3 py-3 text-right uppercase tracking-wide text-xs text-dark-300">
+                                    <i class="bi bi-calculator mr-1.5"></i>Total Amount Due
+                                </td>
+                                <td class="px-3 py-3 text-right font-mono text-lg text-warning-300" id="total-due-display">
+                                    ₱{{ total_due|floatformat:2|intcomma }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    </div>
+                    <p class="text-[10px] text-dark-400 mt-2 italic">
+                        <i class="bi bi-info-circle mr-1"></i>Uncheck newer months to issue a partial bill — oldest months are always required first.
+                    </p>
+
+                    {% else %}
+                    <div class="text-center py-10">
+                        <i class="bi bi-check-circle-fill text-3xl text-success-400 mb-3 block"></i>
+                        <p class="text-sm font-bold text-dark-600">No Pending Bills</p>
+                        <p class="text-xs text-dark-400 mt-1">This consumer is up to date.</p>
                     </div>
                     {% endif %}
-
                 </div>
-            </div>
 
-            {# ===== CASH / CHANGE PANEL ===== #}
-            {% if pending_bills %}
-            <div class="xl:w-72 flex-shrink-0">
-                <div class="bg-white rounded-2xl shadow-md border border-dark-200 overflow-hidden sticky top-0">
-
-                    {# Panel Header #}
-                    <div class="bg-gradient-to-r from-success-600 to-success-700 px-5 py-4">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="bi bi-cash-coin"></i> Cash Transaction
-                        </h3>
-                        <p class="text-[11px] text-white/75 mt-0.5">{{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}</p>
+                {# Cashier Footer #}
+                <div class="px-6 py-3 bg-dark-50 flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs text-dark-500">
+                        <i class="bi bi-person-badge text-dark-400"></i>
+                        Cashier: <span class="font-semibold text-dark-700 ml-0.5">{{ request.user.get_full_name|default:request.user.username }}</span>
                     </div>
+                    {% if selected_consumer.is_delinquent %}
+                    <span class="flex items-center gap-1.5 px-3 py-1 bg-danger-100 text-danger-700 text-xs font-bold rounded-full">
+                        <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> Delinquent Account
+                    </span>
+                    {% endif %}
+                </div>
 
-                    <div class="px-5 py-5 space-y-4">
+            </div>{# /bill card #}
 
-                        {# Total Due Display #}
-                        <div class="bg-dark-900 rounded-xl px-4 py-3 flex items-center justify-between">
-                            <span class="text-[10px] font-bold text-dark-300 uppercase tracking-wider">Amount Due</span>
-                            <span id="modal-total-due" class="text-2xl font-bold font-mono text-warning-300">
-                                ₱{{ total_due|floatformat:2|intcomma }}
-                            </span>
-                        </div>
+            {# ====================================================== #}
+            {# CARD 2 — CASH TRANSACTION  (below the bill statement)   #}
+            {# ====================================================== #}
+            {% if pending_bills %}
+            <div class="bg-white rounded-2xl border-2 border-dark-200 shadow-md overflow-hidden">
+
+                {# Transaction Header #}
+                <div class="bg-gradient-to-r from-success-600 to-success-700 px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="bi bi-cash-stack"></i> Cash Transaction
+                        </h3>
+                        <p class="text-white/70 text-xs mt-0.5">
+                            {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-white/60 text-[10px] uppercase font-bold tracking-wider">Total Due</p>
+                        <p id="modal-total-due" class="text-2xl font-bold font-mono text-white">
+                            ₱{{ total_due|floatformat:2|intcomma }}
+                        </p>
+                    </div>
+                </div>
+
+                {# Transaction Body — 3-column grid #}
+                <div class="px-6 py-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
 
                         {# Cash Received #}
                         <div>
-                            <label class="block text-xs font-bold text-dark-600 uppercase tracking-wider mb-1.5">
-                                <i class="bi bi-cash mr-1"></i>Cash Received (₱)
+                            <label class="block text-xs font-bold text-dark-600 uppercase tracking-wider mb-2">
+                                <i class="bi bi-cash mr-1 text-success-500"></i>Cash Received
                             </label>
                             <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-success-600 font-black text-lg leading-none">₱</span>
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-success-600 font-black text-xl leading-none select-none">₱</span>
                                 <input type="number"
                                        id="received_amount"
                                        min="{{ total_due|floatformat:2 }}"
                                        step="0.01"
                                        placeholder="0.00"
-                                       class="w-full pl-9 pr-3 py-3 text-2xl font-bold border-2 border-success-300 rounded-xl
-                                              focus:outline-none focus:border-success-500 focus:ring-2 focus:ring-success-100
+                                       class="w-full pl-10 pr-3 py-3.5 text-2xl font-bold border-2 border-success-300 rounded-xl
+                                              focus:outline-none focus:border-success-500 focus:ring-4 focus:ring-success-100
                                               bg-white text-dark-900 text-right transition-all"
                                        oninput="updateChange()">
                             </div>
-                            <p id="amount-error" class="text-[11px] text-danger-600 mt-1 hidden flex items-center gap-1">
-                                <i class="bi bi-exclamation-circle"></i>
-                                Must be at least ₱<span id="min-amount">{{ total_due|floatformat:2 }}</span>
+                            <p id="amount-error" class="text-xs text-danger-600 mt-1.5 hidden flex items-center gap-1">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                Min: ₱<span id="min-amount">{{ total_due|floatformat:2 }}</span>
                             </p>
-                        </div>
 
-                        {# Change Display #}
-                        <div class="bg-success-50 border-2 border-success-200 rounded-xl px-4 py-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <span class="text-[9px] font-bold text-dark-500 uppercase tracking-wider block">Change</span>
-                                    <span class="text-[10px] text-dark-400">Amount to return</span>
+                            {# Quick Amounts #}
+                            <div class="mt-2.5">
+                                <p class="text-[10px] font-bold text-dark-400 uppercase tracking-wider mb-1.5">Quick Amount</p>
+                                <div class="flex flex-wrap gap-1.5" id="quick-amounts">
+                                    {# JS inserts buttons here #}
                                 </div>
-                                <span id="change-display" class="text-3xl font-bold font-mono text-success-600">₱0.00</span>
                             </div>
                         </div>
 
-                        {# Remarks #}
+                        {# Change #}
                         <div>
-                            <label class="block text-[10px] font-bold text-dark-600 uppercase tracking-wider mb-1">
-                                Remarks <span class="text-dark-400 font-normal normal-case">(optional)</span>
+                            <label class="block text-xs font-bold text-dark-600 uppercase tracking-wider mb-2">
+                                <i class="bi bi-arrow-return-left mr-1 text-info-500"></i>Change
                             </label>
-                            <input type="text" id="remarks"
-                                   placeholder="e.g. partial payment, penalty waived…"
-                                   class="w-full px-3 py-2 text-xs border border-dark-200 rounded-lg
-                                          focus:outline-none focus:border-success-400 focus:ring-1 focus:ring-success-200
-                                          placeholder-dark-300">
+                            <div class="bg-success-50 border-2 border-success-200 rounded-xl px-4 py-4 flex flex-col items-center justify-center min-h-[72px]">
+                                <span id="change-display" class="text-3xl font-bold font-mono text-success-600 leading-none">₱0.00</span>
+                                <span class="text-[10px] text-dark-400 mt-1.5 uppercase font-semibold tracking-wide">Amount to Return</span>
+                            </div>
                         </div>
 
-                        {# Submit Button #}
-                        <div class="pt-1">
+                        {# Remarks + Submit #}
+                        <div class="flex flex-col gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-dark-600 uppercase tracking-wider mb-2">
+                                    <i class="bi bi-pencil mr-1 text-dark-400"></i>Remarks
+                                    <span class="text-dark-400 font-normal normal-case">(optional)</span>
+                                </label>
+                                <input type="text" id="remarks"
+                                       placeholder="e.g. partial payment, penalty waived…"
+                                       class="w-full px-3 py-2.5 text-sm border-2 border-light-300 rounded-xl
+                                              focus:outline-none focus:border-success-400 focus:ring-2 focus:ring-success-100
+                                              placeholder-dark-300 transition-all">
+                            </div>
+
                             <button type="button"
                                     id="submit-btn"
                                     onclick="submitPayment()"
                                     disabled
-                                    class="w-full py-3 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-xl
-                                           transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed
+                                    class="w-full py-3.5 bg-success-600 hover:bg-success-700 text-white font-bold text-base rounded-xl
+                                           transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed
                                            flex items-center justify-center gap-2">
-                                <i class="bi bi-printer"></i>
-                                Print & Post Receipt
+                                <i class="bi bi-printer-fill text-lg"></i>
+                                Print &amp; Post Receipt
                             </button>
+
                             <a href="{% url 'consumers:process_payment' %}{% if selected_barangay %}?barangay={{ selected_barangay }}{% endif %}"
-                               class="mt-2 w-full py-2 bg-light-100 hover:bg-light-200 text-dark-600 text-xs font-semibold rounded-xl
-                                      border border-light-300 transition-colors flex items-center justify-center gap-2">
-                                <i class="bi bi-x-lg text-[10px]"></i>Cancel
+                               class="w-full py-2.5 border-2 border-light-300 hover:border-light-400 bg-white hover:bg-light-50
+                                      text-dark-600 text-sm font-semibold rounded-xl
+                                      transition-all flex items-center justify-center gap-2">
+                                <i class="bi bi-x-lg text-xs"></i> Cancel
                             </a>
                         </div>
 
-                    </div>{# /py-5 #}
-
-                    {# Quick-amount presets #}
-                    <div class="px-5 pb-4">
-                        <p class="text-[9px] font-bold text-dark-400 uppercase tracking-wider mb-1.5">Quick Amount</p>
-                        <div class="flex flex-wrap gap-1.5" id="quick-amounts">
-                            <!-- Dynamically inserted by JS -->
-                        </div>
-                    </div>
-
+                    </div>{# /grid #}
                 </div>
-            </div>
+
+            </div>{# /transaction card #}
             {% endif %}
 
-        </div>{# /flex xl:flex-row #}
+        </div>{# /max-w-3xl #}
         </form>
+        {% endif %}{# /selected_consumer #}
 
-        {% endif %}{# /if selected_consumer #}
     </div>{# /right panel #}
 
-</div>{# /two-panel wrapper #}
+</div>{# /two-panel #}
 {% endblock %}
 
 
 {% block extra_js %}
 <script>
-// ── Consumer Search ──────────────────────────────────────────────────────────
+// ── Consumer search (live filter, no page reload) ────────────────────────────
 (function () {
-    const searchInput = document.getElementById('search-consumer');
-    if (!searchInput) return;
+    const inp = document.getElementById('search-consumer');
+    if (!inp) return;
 
-    function filterConsumers() {
-        const q = searchInput.value.toLowerCase().trim();
+    function filter() {
+        const q = inp.value.toLowerCase().trim();
         const cards = document.querySelectorAll('.consumer-card');
-        const noResults = document.getElementById('no-results');
-        const list = document.getElementById('consumer-list');
-        let count = 0;
-        cards.forEach(card => {
-            const show = card.dataset.name.includes(q) || card.dataset.id.includes(q);
-            card.style.display = show ? '' : 'none';
-            if (show) count++;
+        const noRes = document.getElementById('no-results');
+        const list  = document.getElementById('consumer-list');
+        let n = 0;
+        cards.forEach(c => {
+            const show = c.dataset.name.includes(q) || c.dataset.id.includes(q);
+            c.style.display = show ? '' : 'none';
+            if (show) n++;
         });
-        document.getElementById('visible-count').textContent = count;
-        if (noResults && list) {
-            noResults.classList.toggle('hidden', count > 0);
-            list.classList.toggle('hidden', count === 0);
+        document.getElementById('visible-count').textContent = n;
+        if (noRes && list) {
+            noRes.classList.toggle('hidden', n > 0);
+            list.classList.toggle('hidden', n === 0);
         }
     }
 
     let t;
-    searchInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(filterConsumers, 180); });
+    inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(filter, 180); });
 }());
 
-// ── Barangay Filter (page reload) ───────────────────────────────────────────
+// ── Barangay filter (requires page reload to filter server-side) ─────────────
 function applyBarangayFilter() {
     const b = document.getElementById('filter-barangay').value;
-    const params = new URLSearchParams();
-    if (b) params.set('barangay', b);
-    {% if selected_consumer %}params.set('consumer', '{{ selected_consumer.id }}');{% endif %}
-    window.location.href = '{% url "consumers:process_payment" %}?' + params.toString();
+    const p = new URLSearchParams();
+    if (b) p.set('barangay', b);
+    {% if selected_consumer %}p.set('consumer', '{{ selected_consumer.id }}');{% endif %}
+    window.location.href = '{% url "consumers:process_payment" %}?' + p.toString();
+}
+function clearBarangay() {
+    {% if selected_consumer %}
+    window.location.href = '{% url "consumers:process_payment" %}?consumer={{ selected_consumer.id }}';
+    {% else %}
+    window.location.href = '{% url "consumers:process_payment" %}';
+    {% endif %}
 }
 
-// ── Bill Selection (oldest-first rule) ──────────────────────────────────────
+// ── Bill selection — oldest-first rule ──────────────────────────────────────
 window._totalDue = parseFloat("{{ total_due|floatformat:2 }}" || "0") || 0;
 
 function initBillSelection() {
@@ -465,14 +535,14 @@ function initBillSelection() {
     function updateTotals() {
         let total = 0;
         const ids = [];
-        checkboxes.forEach(cb => {
+        document.querySelectorAll('.bill-checkbox').forEach(cb => {
             const row = cb.closest('tr');
             if (cb.checked) {
-                row.classList.remove('opacity-30');
+                row.classList.remove('opacity-40');
                 total += parseFloat(cb.dataset.total) || 0;
                 ids.push(cb.dataset.billId);
             } else {
-                row.classList.add('opacity-30');
+                row.classList.add('opacity-40');
             }
         });
 
@@ -489,7 +559,7 @@ function initBillSelection() {
         if (recv) {
             recv.min = total.toFixed(2);
             const minSpan = document.getElementById('min-amount');
-            if (minSpan) minSpan.textContent = total.toFixed(2);
+            if (minSpan) minSpan.textContent = total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 
         window._totalDue = total;
@@ -498,48 +568,42 @@ function initBillSelection() {
     }
 }
 
-// ── Cash / Change Calculator ─────────────────────────────────────────────────
+// ── Cash / Change calculator ─────────────────────────────────────────────────
 function updateChange() {
-    const received = parseFloat(document.getElementById('received_amount')?.value) || 0;
-    const due = window._totalDue;
-    const change = received - due;
+    const received  = parseFloat(document.getElementById('received_amount')?.value) || 0;
+    const due       = window._totalDue;
+    const change    = received - due;
 
-    const changeEl = document.getElementById('change-display');
+    const changeEl  = document.getElementById('change-display');
     const submitBtn = document.getElementById('submit-btn');
-    const errEl = document.getElementById('amount-error');
-
+    const errEl     = document.getElementById('amount-error');
     const fmt = v => '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
     if (changeEl) {
         changeEl.textContent = fmt(Math.max(change, 0));
-        changeEl.className = changeEl.className.replace(/text-(success|danger)-600/g, '');
-        changeEl.classList.add(change >= 0 ? 'text-success-600' : 'text-danger-600');
+        changeEl.classList.toggle('text-success-600', change >= 0);
+        changeEl.classList.toggle('text-danger-600',  change < 0);
     }
     if (submitBtn) submitBtn.disabled = received < due || received === 0;
-    if (errEl) errEl.classList.toggle('hidden', received >= due || received === 0);
+    if (errEl)     errEl.classList.toggle('hidden', received >= due || received === 0);
 }
 
-// ── Quick Amount Presets ──────────────────────────────────────────────────────
+// ── Quick amount presets ─────────────────────────────────────────────────────
 function buildQuickAmounts(due) {
     const container = document.getElementById('quick-amounts');
-    if (!container) return;
+    if (!container || due <= 0) return;
 
-    // Build neat round-number presets above the due amount
+    const seen = new Set();
     const presets = [];
-    const roundUps = [0, 20, 50, 100, 200, 500];
-    roundUps.forEach(add => {
-        const raw = due + add;
-        const rounded = Math.ceil(raw / 10) * 10; // round up to next 10
-        if (!presets.includes(rounded) && rounded >= due) presets.push(rounded);
+    [0, 20, 50, 100, 200, 500].forEach(add => {
+        const v = Math.ceil((due + add) / 10) * 10;
+        if (!seen.has(v) && v >= due) { seen.add(v); presets.push(v); }
     });
-    // Deduplicate, sort, take first 5
-    const sorted = [...new Set(presets)].sort((a,b) => a-b).slice(0, 5);
 
-    container.innerHTML = sorted.map(p =>
-        `<button type="button"
-                 onclick="setAmount(${p})"
-                 class="px-2.5 py-1 text-[11px] font-semibold bg-success-50 hover:bg-success-100
-                        text-success-700 border border-success-200 rounded-lg transition-colors cursor-pointer">
+    container.innerHTML = presets.slice(0, 5).map(p =>
+        `<button type="button" onclick="setAmount(${p})"
+                 class="px-3 py-1.5 text-xs font-semibold bg-success-50 hover:bg-success-100
+                        text-success-700 border border-success-200 rounded-lg transition-colors">
              ₱${p.toLocaleString()}
          </button>`
     ).join('');
@@ -564,25 +628,23 @@ function submitPayment() {
     document.getElementById('payment-form').submit();
 }
 
-// ── Keyboard Shortcut: Enter on cash input submits ────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     initBillSelection();
     updateChange();
+    if (window._totalDue > 0) buildQuickAmounts(window._totalDue);
 
-    const due = window._totalDue;
-    if (due > 0) buildQuickAmounts(due);
-
+    // Auto-focus cash input + Enter key to submit
     const inp = document.getElementById('received_amount');
     if (inp) {
-        inp.addEventListener('keydown', function(e) {
+        inp.focus();
+        inp.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const received = parseFloat(inp.value) || 0;
-                if (received >= window._totalDue && received > 0) submitPayment();
+                const v = parseFloat(inp.value) || 0;
+                if (v >= window._totalDue && v > 0) submitPayment();
             }
         });
-        // Auto-focus the cash field when a consumer is selected
-        inp.focus();
     }
 });
 </script>

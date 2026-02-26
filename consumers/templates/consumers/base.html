@@ -1115,14 +1115,17 @@
         }
 
         // =====================================================
-        // AUTO-LOGOUT: 3 min inactivity → 30 sec countdown
+        // AUTO-LOGOUT: 3 min inactivity → 30 sec countdown (Cross-tab synced)
         // =====================================================
-        let _idleTimer = null, _countdownTimer = null, _countdownActive = false;
+        let _countdownActive = false;
+        let _syncTimer = null;
+        const IDLE_LIMIT = 3 * 60 * 1000; // 3 minutes ms
+        const COUNTDOWN_LIMIT = 30 * 1000; // 30 seconds ms
 
         function initAutoLogout() {
             if (!document.querySelector('a[href*="logout"]')) return;
 
-            // Build warning modal
+            // Build warning modal explicitly injected into body
             document.body.insertAdjacentHTML('beforeend', `
                 <div id="idleModal" class="fixed inset-0 z-50 hidden">
                     <div class="fixed inset-0 bg-black bg-opacity-50"></div>
@@ -1151,45 +1154,77 @@
                 </div>
             `);
 
+            // Initialize last activity if not set recently by another tab
+            if (!localStorage.getItem('bww_last_activity')) {
+                localStorage.setItem('bww_last_activity', Date.now().toString());
+            }
+
+            // Sync user physical events
             ['mousedown','mousemove','keydown','scroll','touchstart','click'].forEach(e => {
-                document.addEventListener(e, _resetIdle, { passive: true });
+                document.addEventListener(e, _updateActivity, { passive: true });
             });
-            _resetIdle();
+
+            // Run central time checker every 1000ms
+            _syncTimer = setInterval(_checkTimeState, 1000);
+            _checkTimeState(); // Initial check
         }
 
-        function _resetIdle() {
+        function _updateActivity() {
+            // Do not naturally extend activity if we are already in the countdown modal
             if (_countdownActive) return;
-            clearTimeout(_idleTimer);
-            _idleTimer = setTimeout(_showWarning, 3 * 60 * 1000); // 3 minutes
+            localStorage.setItem('bww_last_activity', Date.now().toString());
         }
 
-        function _showWarning() {
-            _countdownActive = true;
-            let sec = 30;
-            const modal = document.getElementById('idleModal');
-            const countEl = document.getElementById('idleCount');
-            const bar = document.getElementById('idleBar');
-            modal.classList.remove('hidden');
+        function _checkTimeState() {
+            let lastAct = parseInt(localStorage.getItem('bww_last_activity')) || Date.now();
+            let idleTime = Date.now() - lastAct;
 
-            _countdownTimer = setInterval(() => {
-                sec--;
-                countEl.textContent = sec;
-                bar.style.width = `${(sec / 30) * 100}%`;
-                if (sec <= 0) { clearInterval(_countdownTimer); _doLogout(); }
-            }, 1000);
+            if (idleTime < IDLE_LIMIT) {
+                // Normal active state
+                if (_countdownActive) {
+                    _hideWarningModal(); 
+                }
+            } else if (idleTime < IDLE_LIMIT + COUNTDOWN_LIMIT) {
+                // Countdown Warning state
+                if (!_countdownActive) {
+                    _showWarningModal();
+                }
+                
+                // Calculate accurate remaining seconds based on absolute timestamps
+                let secLeft = Math.ceil((IDLE_LIMIT + COUNTDOWN_LIMIT - idleTime) / 1000);
+                if (secLeft < 0) secLeft = 0;
+                
+                document.getElementById('idleCount').textContent = secLeft;
+                document.getElementById('idleBar').style.width = \`\${(secLeft / 30) * 100}%\`;
+
+            } else {
+                // Auto Execution State
+                _doLogout();
+            }
+        }
+
+        function _showWarningModal() {
+            _countdownActive = true;
+            document.getElementById('idleModal').classList.remove('hidden');
+        }
+
+        function _hideWarningModal() {
+            _countdownActive = false;
+            document.getElementById('idleModal').classList.add('hidden');
         }
 
         function _stayIn() {
-            _countdownActive = false;
-            clearInterval(_countdownTimer);
-            document.getElementById('idleModal').classList.add('hidden');
-            _resetIdle();
+            _hideWarningModal();
+            localStorage.setItem('bww_last_activity', Date.now().toString());
             if (typeof showToast === 'function') showToast('success', 'Session extended.');
+            // Force an immediate UI sync update
+            _checkTimeState();
         }
 
         function _doLogout() {
-            clearTimeout(_idleTimer);
-            clearInterval(_countdownTimer);
+            clearInterval(_syncTimer);
+            // Delete the last activity so we don't accidentally bounce back here
+            localStorage.removeItem('bww_last_activity');
             window.location.href = '{% url "consumers:staff_logout" %}';
         }
 

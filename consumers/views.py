@@ -5770,15 +5770,21 @@ def user_login_history(request):
     # Order by most recent
     login_events = login_events.order_by('-login_timestamp')
 
-    # Analytics
-    total_logins = login_events.count()
-    successful_logins = login_events.filter(status='success').count()
-    failed_logins = login_events.filter(status='failed').count()
-    active_sessions = login_events.filter(status='success', logout_timestamp__isnull=True).count()
-
-    # Recent activity (last 24 hours)
+    # Calculate ALL Analytics in ONE query using conditional aggregation
     last_24_hours = timezone.now() - timedelta(hours=24)
-    recent_logins = login_events.filter(login_timestamp__gte=last_24_hours).count()
+    stats = login_events.aggregate(
+        total_logins=Count('id'),
+        successful_logins=Count('id', filter=Q(status='success')),
+        failed_logins=Count('id', filter=Q(status='failed')),
+        active_sessions=Count('id', filter=Q(status='success', logout_timestamp__isnull=True)),
+        recent_logins=Count('id', filter=Q(login_timestamp__gte=last_24_hours))
+    )
+    
+    total_logins = stats['total_logins'] or 0
+    successful_logins = stats['successful_logins'] or 0
+    failed_logins = stats['failed_logins'] or 0
+    active_sessions = stats['active_sessions'] or 0
+    recent_logins = stats['recent_logins'] or 0
 
     # Top users
     top_users = User.objects.annotate(

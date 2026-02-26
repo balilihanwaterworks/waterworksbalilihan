@@ -125,6 +125,9 @@
                                     Month & Year<br>
                                     <span class="text-base font-black">{{ card.year }}</span>
                                 </th>
+                                <th class="px-3 py-2.5 text-center text-xs font-bold uppercase tracking-wider border-r border-dark-700 print:border-gray-400 w-16">
+                                    Conn
+                                </th>
                                 <th class="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wider border-r border-dark-700 print:border-gray-400 w-20">
                                     Reading
                                 </th>
@@ -158,19 +161,20 @@
                                 {% elif row.status == 'Overdue' %}bg-danger-50
                                 {% elif row.status == 'Paid' %}bg-success-50/30
                                 {% else %}hover:bg-light-50{% endif %} transition-colors">
-                                <!-- Month + Badge -->
+                                <!-- Month -->
                                 <td class="px-3 py-2 border-r border-light-200 print:border-gray-300">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="font-semibold {% if row.connection_status == 'disconnected' %}text-red-700{% else %}text-dark-900{% endif %}">{{ row.month_name }}</span>
+                                    <span class="font-semibold {% if row.connection_status == 'disconnected' %}text-red-700{% else %}text-dark-900{% endif %}">{{ row.month_name }}</span>
+                                </td>
+                                <!-- Connection Status Badge -->
+                                <td class="px-3 py-2 border-r border-light-200 print:border-gray-300 text-center">
+                                    <span onclick="showConnectionInfo('{{ row.month_name }}', '{{ card.year }}', '{{ row.connection_status }}', '{{ row.conn_details.type|default:"" }}', '{{ row.conn_details.by|default:"" }}', '{{ row.conn_details.date|date:"M d, Y h:i A"|default:"" }}', '{{ row.conn_details.description|default:"" }}')"
+                                          class="cursor-pointer hover:opacity-70 transition-opacity inline-flex justify-center" title="Click for connection details">
                                         {% if row.connection_status == 'disconnected' %}
-                                        <span onclick="showDisconnectedInfo('{{ row.month_name }}', '{{ card.year }}', '{{ row.disconnect_details.by|default:"" }}', '{{ row.disconnect_details.date|date:"M d, Y h:i A"|default:"" }}', '{{ row.disconnect_details.description|default:"" }}')"
-                                              class="cursor-pointer hover:opacity-70 transition-opacity" title="Click for details">
-                                            <i class="bi bi-x-circle-fill text-red-500"></i>
-                                        </span>
+                                        <i class="bi bi-x-circle-fill text-red-500 text-lg"></i>
                                         {% else %}
-                                        <i class="bi bi-check-circle-fill text-success-500"></i>
+                                        <i class="bi bi-check-circle-fill text-success-500 text-lg"></i>
                                         {% endif %}
-                                    </div>
+                                    </span>
                                 </td>
                                 <!-- Reading (clickable) -->
                                 <td class="px-3 py-2 border-r border-light-200 print:border-gray-300 text-right font-mono text-dark-700">
@@ -315,52 +319,62 @@
     </div>
 </div>
 
-<!-- Disconnected Info Modal -->
-<div id="disconnectedModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 print:hidden">
+<!-- Connection Tracking Modal -->
+<div id="connectionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 print:hidden">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
-        <div class="bg-red-600 text-white px-6 py-4 flex items-center justify-between">
+        <div id="connModalHeader" class="text-white px-6 py-4 flex items-center justify-between transition-colors">
             <h3 class="font-bold flex items-center gap-2">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <span id="dcModalTitle">Disconnected</span>
+                <i id="connModalIcon" class="bi"></i>
+                <span id="connModalTitle">Connection Status</span>
             </h3>
-            <button onclick="closeModal('disconnectedModal')" class="text-white/80 hover:text-white text-xl">&times;</button>
+            <button onclick="closeModal('connectionModal')" class="text-white/80 hover:text-white text-xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-3">
-            <div class="bg-red-50 rounded-lg p-3 border border-red-200">
-                <p class="text-xs text-dark-500 mb-1">Status</p>
-                <p class="text-sm font-semibold text-red-700"><i class="bi bi-x-circle-fill mr-1"></i>Service Disconnected</p>
+            <div id="connStatusBox" class="rounded-lg p-3 border">
+                <p class="text-xs text-dark-500 mb-1">Period Status</p>
+                <p class="text-sm font-semibold" id="connStatusText"><i id="connStatusIcon" class="bi mr-1"></i><span></span></p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-light-50 rounded-lg p-3 border border-light-200">
-                    <p class="text-xs text-dark-500 mb-1">Disconnected By</p>
-                    <p class="text-sm font-semibold text-dark-900" id="dcBy">—</p>
+            
+            <div id="connEventDetails" class="hidden">
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-light-50 rounded-lg p-3 border border-light-200">
+                        <p class="text-xs text-dark-500 mb-1">Action By</p>
+                        <p class="text-sm font-semibold text-dark-900" id="connBy">—</p>
+                    </div>
+                    <div class="bg-light-50 rounded-lg p-3 border border-light-200">
+                        <p class="text-xs text-dark-500 mb-1">Date</p>
+                        <p class="text-sm font-semibold text-dark-900" id="connDate">—</p>
+                    </div>
                 </div>
-                <div class="bg-light-50 rounded-lg p-3 border border-light-200">
-                    <p class="text-xs text-dark-500 mb-1">Date</p>
-                    <p class="text-sm font-semibold text-dark-900" id="dcDate">—</p>
+                <div class="bg-light-50 rounded-lg p-3 border border-light-200 mb-3">
+                    <p class="text-xs text-dark-500 mb-1">Details</p>
+                    <p class="text-sm text-dark-700" id="connDescription">—</p>
                 </div>
             </div>
-            <div class="bg-light-50 rounded-lg p-3 border border-light-200">
-                <p class="text-xs text-dark-500 mb-1">Details</p>
-                <p class="text-sm text-dark-700" id="dcDescription">—</p>
+
+            <div id="connNoEventDetails" class="bg-light-50 rounded-lg p-4 border border-light-200 text-center">
+                <i class="bi bi-check-circle text-success-400 text-3xl mb-2"></i>
+                <p class="text-sm font-medium text-dark-800">Account Active</p>
+                <p class="text-xs text-dark-500 mt-1">No special disconnection or reconnection events found during this timeline.</p>
             </div>
-            <div class="bg-light-50 rounded-lg p-3 border border-light-200">
-                <p class="text-xs text-dark-500 mb-1">Current Status</p>
+
+            <div class="bg-light-50 rounded-lg p-3 border border-light-200 mt-2">
+                <p class="text-xs text-dark-500 mb-1">Present Day Status</p>
                 <p class="text-sm">
                     {% if consumer.status == 'Active' %}
                     <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-success-100 text-success-700">
-                        <i class="bi bi-check-circle-fill mr-1"></i>Reconnected
+                        <i class="bi bi-check-circle-fill mr-1"></i>Currently Active
                     </span>
                     {% else %}
                     <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
-                        <i class="bi bi-x-circle-fill mr-1"></i>Still Disconnected
+                        <i class="bi bi-x-circle-fill mr-1"></i>Currently Disconnected
                     </span>
                     {% endif %}
                 </p>
             </div>
         </div>
         <div class="px-6 py-3 bg-light-50 border-t border-light-200 flex justify-end">
-            <button onclick="closeModal('disconnectedModal')" class="px-4 py-2 bg-dark-700 text-white text-sm rounded-lg hover:bg-dark-800 transition-colors">Close</button>
+            <button onclick="closeModal('connectionModal')" class="px-4 py-2 bg-dark-700 text-white text-sm rounded-lg hover:bg-dark-800 transition-colors">Close</button>
         </div>
     </div>
 </div>
@@ -457,12 +471,61 @@ function closeModal(id) {
     modal.classList.remove('flex');
 }
 
-function showDisconnectedInfo(month, year, by, date, description) {
-    document.getElementById('dcModalTitle').textContent = month + ' ' + year + ' — Disconnected';
-    document.getElementById('dcBy').textContent = by || '—';
-    document.getElementById('dcDate').textContent = date || '—';
-    document.getElementById('dcDescription').textContent = description || 'No additional details available.';
-    openModal('disconnectedModal');
+function showConnectionInfo(month, year, currentStatus, eventType, by, date, description) {
+    document.getElementById('connModalTitle').textContent = month + ' ' + year + ' — Connection Details';
+    
+    const header = document.getElementById('connModalHeader');
+    const headerIcon = document.getElementById('connModalIcon');
+    const statusBox = document.getElementById('connStatusBox');
+    const statusTextSpan = document.querySelector('#connStatusText span');
+    const statusIcon = document.getElementById('connStatusIcon');
+    const eventDetails = document.getElementById('connEventDetails');
+    const noEventDetails = document.getElementById('connNoEventDetails');
+
+    // Reset styles
+    header.className = 'text-white px-6 py-4 flex items-center justify-between transition-colors';
+    statusBox.className = 'rounded-lg p-3 border';
+
+    if (currentStatus === 'disconnected') {
+        header.classList.add('bg-red-600');
+        headerIcon.className = 'bi bi-dash-circle-fill';
+        statusBox.classList.add('bg-red-50', 'border-red-200');
+        statusTextSpan.textContent = 'Service Disconnected';
+        statusTextSpan.parentElement.className = 'text-sm font-semibold text-red-700';
+        statusIcon.className = 'bi bi-x-circle-fill mr-1';
+        
+        eventDetails.classList.remove('hidden');
+        noEventDetails.classList.add('hidden');
+        
+        document.getElementById('connBy').textContent = by || '—';
+        document.getElementById('connDate').textContent = date || '—';
+        document.getElementById('connDescription').textContent = description || 'No additional details available.';
+        
+    } else {
+        header.classList.add('bg-success-600');
+        headerIcon.className = 'bi bi-check-circle-fill';
+        statusBox.classList.add('bg-success-50', 'border-success-200');
+        statusTextSpan.textContent = 'Service Active';
+        statusTextSpan.parentElement.className = 'text-sm font-semibold text-success-700';
+        statusIcon.className = 'bi bi-check-circle-fill mr-1';
+        
+        if (eventType === 'reconnected') {
+            // Show specifically who reconnected them and when during this timeline
+            eventDetails.classList.remove('hidden');
+            noEventDetails.classList.add('hidden');
+            statusTextSpan.textContent = 'Service Was Reconnected';
+            
+            document.getElementById('connBy').textContent = by || '—';
+            document.getElementById('connDate').textContent = date || '—';
+            document.getElementById('connDescription').textContent = description || 'No additional details available.';
+        } else {
+            // Uninterrupted natively active period
+            eventDetails.classList.add('hidden');
+            noEventDetails.classList.remove('hidden');
+        }
+    }
+
+    openModal('connectionModal');
 }
 
 function showReadingInfo(period, value, date, source, submittedBy, status, confirmedBy, confirmedAt) {
@@ -486,7 +549,7 @@ function showReadingInfo(period, value, date, source, submittedBy, status, confi
 }
 
 // Close modals on backdrop click
-['disconnectedModal', 'readingModal'].forEach(function(id) {
+['connectionModal', 'readingModal'].forEach(function(id) {
     document.getElementById(id).addEventListener('click', function(e) {
         if (e.target === this) closeModal(id);
     });
@@ -495,7 +558,7 @@ function showReadingInfo(period, value, date, source, submittedBy, status, confi
 // Close on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        closeModal('disconnectedModal');
+        closeModal('connectionModal');
         closeModal('readingModal');
     }
 });

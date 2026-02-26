@@ -5910,7 +5910,7 @@ def consumer_bill(request, consumer_id):
         })
 
     def get_month_status(year, month):
-        """Determine connection status and event details for a given month."""
+        """Determine connection status and the latest event details for a given month."""
         check_date = date(year, month, 1)
         current_status = 'active'
         current_event = None
@@ -5934,11 +5934,13 @@ def consumer_bill(request, consumer_id):
         key = (bill.billing_period.year, bill.billing_period.month)
         bill_map[key] = bill
 
-    # Determine which years to show
+    # Determine which years to show. Always ensure at least the current year shows for empty states.
     if selected_year:
         years_to_show = [int(selected_year)]
-    else:
+    elif available_years:
         years_to_show = sorted(available_years, reverse=True)
+    else:
+        years_to_show = [datetime.now().year]
 
     # Build ledger cards
     ledger_cards = []
@@ -5951,7 +5953,7 @@ def consumer_bill(request, consumer_id):
                 payments = list(bill.payments.all())
                 payment = payments[0] if payments else None
 
-            connection_status, disconnect_event = get_month_status(year, month_num)
+            connection_status, conn_event = get_month_status(year, month_num)
 
             reading_value = None
             reading_details = None
@@ -5968,13 +5970,14 @@ def consumer_bill(request, consumer_id):
                     'confirmed_at': r.confirmed_at,
                 }
 
-            disconnect_details = None
-            if connection_status == 'disconnected' and disconnect_event:
-                evt_user = disconnect_event['user']
-                disconnect_details = {
-                    'date': disconnect_event['created_at'],
+            conn_details = None
+            if conn_event:
+                evt_user = conn_event['user']
+                conn_details = {
+                    'date': conn_event['created_at'],
                     'by': f"{evt_user.first_name} {evt_user.last_name}" if evt_user else 'System',
-                    'description': disconnect_event['description'],
+                    'description': conn_event['description'],
+                    'type': 'disconnected' if conn_event['status'] == 'disconnected' else 'reconnected'
                 }
 
             months.append({
@@ -5992,7 +5995,7 @@ def consumer_bill(request, consumer_id):
                 'processed_by': payment.processed_by if payment else None,
                 'status': bill.status if bill else None,
                 'connection_status': connection_status,
-                'disconnect_details': disconnect_details,
+                'conn_details': conn_details,
             })
 
         ledger_cards.append({

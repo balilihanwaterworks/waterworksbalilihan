@@ -5610,18 +5610,24 @@ def payment_receipt(request, payment_id):
 
 
 @login_required
+@role_required('cashier', 'admin', 'superadmin') # Give access to admin/superadmin as well as cashier
 def payment_history(request):
     """
     Payment History view showing all payments with penalty tracking.
     Allows filtering by date range, consumer, and penalty status.
+    Optimized to handle 30,000+ consumers efficiently.
     """
     from django.core.paginator import Paginator
-    from django.db.models import Sum, Q
+    from django.db.models import Sum, Q, Count
+    
+    # Load barangays for the filter dropdown
+    barangays = Barangay.objects.all().order_by('name')
 
     # Get filter parameters
     search_query = request.GET.get('search', '').strip()
     penalty_filter = request.GET.get('penalty', '')  # 'with_penalty', 'waived', 'no_penalty'
-
+    barangay_filter = request.GET.get('barangay', '') # New barangay filter
+    
     # Default date range: 1 month (today back to 1 month ago)
     today = timezone.now().date()
     default_to = today.strftime('%Y-%m-%d')
@@ -5654,6 +5660,9 @@ def payment_history(request):
             Q(bill__consumer__id_number__icontains=search_query) |
             Q(or_number__icontains=search_query)
         )
+        
+    if barangay_filter:
+        payments = payments.filter(bill__consumer__barangay_id=barangay_filter)
 
     if date_from:
         payments = payments.filter(payment_date__date__gte=date_from)
@@ -5668,18 +5677,22 @@ def payment_history(request):
     elif penalty_filter == 'no_penalty':
         payments = payments.filter(penalty_amount=0)
 
-    # Calculate statistics
-    total_stats = payments.aggregate(
+    # Calculate ALL statistics in a SINGLE optimized database query
+    stats = payments.aggregate(
         total_collected=Sum('amount_paid'),
         total_penalties=Sum('penalty_amount'),
-        total_bills=Sum('original_bill_amount')
+        total_bills=Sum('original_bill_amount'),
+        # Use conditional aggregation to count penalty statuses in the same query
+        count_with_penalty=Count('id', filter=Q(penalty_amount__gt=0, penalty_waived=False)),
+        count_waived=Count('id', filter=Q(penalty_waived=True)),
+        count_no_penalty=Count('id', filter=Q(penalty_amount=0)),
+        total_records=Count('id')
     )
 
-    # Count by penalty status
     penalty_counts = {
-        'with_penalty': payments.filter(penalty_amount__gt=0, penalty_waived=False).count(),
-        'waived': payments.filter(penalty_waived=True).count(),
-        'no_penalty': payments.filter(penalty_amount=0).count(),
+        'with_penalty': stats['count_with_penalty'] or 0,
+        'waived': stats['count_waived'] or 0,
+        'no_penalty': stats['count_no_penalty'] or 0,
     }
 
     # Pagination
@@ -5691,12 +5704,14 @@ def payment_history(request):
         'page_obj': page_obj,
         'payments': page_obj,
         'search_query': search_query,
+        'barangays': barangays,          # Pass down to template
+        'barangay_filter': barangay_filter, # Pass down to template
         'date_from': date_from,
         'date_to': date_to,
         'penalty_filter': penalty_filter,
-        'total_stats': total_stats,
+        'total_stats': stats,
         'penalty_counts': penalty_counts,
-        'total_count': payments.count(),
+        'total_count': stats['total_records'] or 0,
     }
 
     return render(request, 'consumers/payment_history.html', context)

@@ -8,7 +8,7 @@ from .decorators import (
     consumer_edit_permission_required, disconnect_permission_required,
     user_management_permission_required, system_settings_permission_required,
     billing_permission_required, reports_permission_required, view_only_for_admin,
-    rate_limit_login
+    rate_limit_login, role_required
 )
 from django.db.models import Q, Max, Count, Sum, OuterRef, Subquery, Value, F
 from django.db.models.functions import Concat, TruncMonth

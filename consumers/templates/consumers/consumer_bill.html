@@ -8,11 +8,25 @@
 <div class="max-w-7xl mx-auto">
     <!-- Action Bar (Hide on Print) -->
     <div class="mb-6 flex items-center justify-between print:hidden">
+        {% if request.GET.source == 'disconnected' %}
+        <a href="{% url 'consumers:disconnected_consumers' %}"
+           class="px-4 py-2 bg-light-100 text-dark-700 rounded-lg text-sm font-medium hover:bg-light-200 transition-colors flex items-center gap-2">
+            <i class="bi bi-arrow-left"></i>
+            Back to Disconnected List
+        </a>
+        {% elif request.GET.source == 'connected' %}
+        <a href="{% url 'consumers:connected_consumers' %}"
+           class="px-4 py-2 bg-light-100 text-dark-700 rounded-lg text-sm font-medium hover:bg-light-200 transition-colors flex items-center gap-2">
+            <i class="bi bi-arrow-left"></i>
+            Back to Connected List
+        </a>
+        {% else %}
         <a href="{% url 'consumers:consumer_management' %}"
            class="px-4 py-2 bg-light-100 text-dark-700 rounded-lg text-sm font-medium hover:bg-light-200 transition-colors flex items-center gap-2">
             <i class="bi bi-arrow-left"></i>
             Back to Consumer Management
         </a>
+        {% endif %}
         <button onclick="window.print()"
                 class="btn-primary px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 hover:shadow-lg transition-all duration-200">
             <i class="bi bi-printer-fill"></i>

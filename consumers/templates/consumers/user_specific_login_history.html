@@ -80,7 +80,7 @@
                         <th class="px-4 py-4 text-center text-sm font-semibold text-dark-700">Method</th>
                         <th class="px-4 py-4 text-center text-sm font-semibold text-dark-700">Status</th>
                         <th class="px-4 py-4 text-center text-sm font-semibold text-dark-700">Duration</th>
-                        <th class="px-4 py-4 text-center text-sm font-semibold text-dark-700">Full History</th>
+                        <th class="px-4 py-4 text-center text-sm font-semibold text-dark-700">Activities</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-light-200">
@@ -163,10 +163,16 @@
                             {% endif %}
                         </td>
                         <td class="px-4 py-3 text-center">
-                            <a href="{% url 'consumers:user_specific_login_history' event.user.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-sm hover:shadow">
-                                <i class="bi bi-clock-history"></i>
-                                View History
+                            {% if event.activities_count > 0 %}
+                            <a href="{% url 'consumers:session_activities' event.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-sm hover:shadow">
+                                <i class="bi bi-eye"></i>
+                                View ({{ event.activities_count }})
                             </a>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs text-dark-400 bg-light-100">
+                                <i class="bi bi-dash mr-1"></i>No activity
+                            </span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}

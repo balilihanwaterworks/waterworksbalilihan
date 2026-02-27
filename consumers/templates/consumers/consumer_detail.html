@@ -11,10 +11,22 @@
             <h2 class="text-xl font-bold text-dark-900">Consumer Profile</h2>
             <p class="text-dark-500 text-xs mt-1">ID Number: {{ consumer.id_number|default:"—" }}</p>
         </div>
+        {% if request.GET.source == 'disconnected' %}
+        <a href="{% url 'consumers:disconnected_consumers' %}"
+           class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
+            <i class="bi bi-arrow-left mr-1"></i>Back
+        </a>
+        {% elif request.GET.source == 'connected' %}
+        <a href="{% url 'consumers:connected_consumers' %}"
+           class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
+            <i class="bi bi-arrow-left mr-1"></i>Back
+        </a>
+        {% else %}
         <a href="{% url 'consumers:consumer_management' %}"
            class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
-            <i class="bi bi-arrow-left mr-1"></i>Back to List
+            <i class="bi bi-arrow-left mr-1"></i>Back
         </a>
+        {% endif %}
     </div>
 
     <!-- Status Badge -->
@@ -179,7 +191,7 @@
     <div class="flex flex-wrap items-center gap-2">
         {% if user.is_superuser %}
         <!-- Edit Consumer - Superuser Only -->
-        <a href="{% url 'consumers:edit_consumer' consumer.id %}"
+        <a href="{% url 'consumers:edit_consumer' consumer.id %}{% if request.GET.source %}?source={{ request.GET.source }}{% endif %}"
            class="px-4 py-2 bg-warning-500 text-white text-sm font-medium rounded hover:bg-warning-600 transition-colors shadow-sm">
             <i class="bi bi-pencil-square mr-1"></i>Edit Consumer
         </a>

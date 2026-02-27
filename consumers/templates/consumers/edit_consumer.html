@@ -11,10 +11,22 @@
             <h2 class="text-xl font-bold text-dark-900">Edit Consumer</h2>
             <p class="text-dark-500 text-xs mt-1">Update consumer information</p>
         </div>
+        {% if request.GET.source == 'disconnected' %}
+        <a href="{% url 'consumers:disconnected_consumers' %}"
+           class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
+            <i class="bi bi-arrow-left mr-1"></i>Back
+        </a>
+        {% elif request.GET.source == 'connected' %}
+        <a href="{% url 'consumers:connected_consumers' %}"
+           class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
+            <i class="bi bi-arrow-left mr-1"></i>Back
+        </a>
+        {% else %}
         <a href="{% url 'consumers:consumer_management' %}"
            class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 transition-colors">
-            <i class="bi bi-arrow-left mr-1"></i>Back to List
+            <i class="bi bi-arrow-left mr-1"></i>Back
         </a>
+        {% endif %}
     </div>
 
     <!-- Messages/Alerts -->
@@ -205,10 +217,22 @@
 
             <!-- Form Footer -->
             <div class="px-5 py-3 border-t border-light-200 flex items-center justify-end gap-2 bg-light-50">
+                {% if request.GET.source == 'disconnected' %}
+                <a href="{% url 'consumers:disconnected_consumers' %}"
+                   class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 hover:border-dark-400 transition-colors">
+                    <i class="bi bi-x-circle mr-1"></i>Cancel
+                </a>
+                {% elif request.GET.source == 'connected' %}
+                <a href="{% url 'consumers:connected_consumers' %}"
+                   class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 hover:border-dark-400 transition-colors">
+                    <i class="bi bi-x-circle mr-1"></i>Cancel
+                </a>
+                {% else %}
                 <a href="{% url 'consumers:consumer_management' %}"
                    class="px-4 py-1.5 border border-light-400 text-dark-700 text-sm font-medium rounded hover:bg-light-100 hover:border-dark-400 transition-colors">
                     <i class="bi bi-x-circle mr-1"></i>Cancel
                 </a>
+                {% endif %}
                 <button type="submit" id="submitButton" class="px-4 py-1.5 bg-success-600 text-white text-sm font-medium rounded hover:bg-success-700 transition-colors shadow-sm">
                     <i class="bi bi-check-circle mr-1" id="submitIcon"></i><span id="submitText">Update Consumer</span>
                 </button>

@@ -196,12 +196,12 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-2">
-                                <a href="{% url 'consumers:consumer_detail' consumer.id %}"
+                                <a href="{% url 'consumers:consumer_detail' consumer.id %}?source={% if title == 'Disconnected Consumers' %}disconnected{% elif title == 'Connected Consumers' %}connected{% else %}filtered{% endif %}"
                                    class="p-2 text-info-600 hover:bg-info-50 rounded-lg transition-colors"
                                    title="View Details">
                                     <i class="bi bi-eye-fill"></i>
                                 </a>
-                                <a href="{% url 'consumers:edit_consumer' consumer.id %}"
+                                <a href="{% url 'consumers:edit_consumer' consumer.id %}?source={% if title == 'Disconnected Consumers' %}disconnected{% elif title == 'Connected Consumers' %}connected{% else %}filtered{% endif %}"
                                    class="p-2 text-warning-600 hover:bg-warning-50 rounded-lg transition-colors"
                                    title="Edit Consumer">
                                     <i class="bi bi-pencil-fill"></i>

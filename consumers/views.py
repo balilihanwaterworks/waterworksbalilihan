@@ -5747,17 +5747,22 @@ def user_login_history(request):
     from .models import Barangay
     barangays = Barangay.objects.all().order_by('name')
 
-    # Base query - prefetch activities for session tracking
-    from django.db.models import Subquery, OuterRef
+    # Get the latest event ID for each user using annotation and order_by
+    # Avoid OuterRef and Subquery which can be buggy depending on DB version
+    # SQLite has poor support for window functions and Subquery in typical ORMs
     
-    # Get the latest event ID for each user
-    latest_event_ids = UserLoginEvent.objects.filter(
-        user=OuterRef('user')
-    ).order_by('-login_timestamp').values('id')[:1]
+    # We grab all events first to keep the analytics math valid across the entire dataset
     
-    # Base query - only the latest events
+    from django.db.models import Max
+    from django.db.models.functions import Coalesce
+
+    # First, get latest event per user
+    latest_event_ids = UserLoginEvent.objects.values('user_id').annotate(
+        max_id=Max('id')
+    ).values_list('max_id', flat=True)
+    
     login_events = UserLoginEvent.objects.filter(
-        id__in=Subquery(latest_event_ids)
+        id__in=latest_event_ids
     ).select_related('user').prefetch_related('activities')
 
     # Apply filters
@@ -5792,13 +5797,9 @@ def user_login_history(request):
     login_events = login_events.order_by('-login_timestamp')
 
     # Annotate with the exact time of last activity (or login if no activities)
-    from django.db.models import Max
-    from django.db.models.functions import Coalesce
-    
     login_events = login_events.annotate(
         last_activity_time=Coalesce(Max('activities__created_at'), 'login_timestamp')
     )
-
     # Calculate ALL Analytics in ONE query using conditional aggregation
     # Note: We calculate this across ALL login events, not just the filtered latest ones,
     # so the analytics cards remain accurate for the entire system history.

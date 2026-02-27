@@ -132,7 +132,7 @@
                 </thead>
                 <tbody class="divide-y divide-light-200">
                     {% for event in login_events %}
-                    <tr class="hover:bg-light-50 cursor-pointer transition-colors" onclick="window.location='{% url \'consumers:user_specific_login_history\' event.user.id %}'" title="Click to view full login history for {{ event.user.username }}">
+                    <tr class="hover:bg-light-50 cursor-pointer transition-colors" onclick="window.location.href=`{% url 'consumers:user_specific_login_history' event.user.id %}`" title="Click to view full login history for {{ event.user.username }}">
                         <td class="px-4 py-3">
                             <strong class="text-dark-900">{{ event.user.username }}</strong>
                             {% if event.user.first_name or event.user.last_name %}

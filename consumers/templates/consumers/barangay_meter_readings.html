@@ -137,7 +137,7 @@
                                 {% else %}
                                     <div class="w-8 h-8 flex-shrink-0"></div> <!-- Placeholder to keep column straight -->
                                 {% endif %}
-                                <a href="{% url 'consumers:consumer_bill' item.consumer.id %}"
+                                <a href="{% url 'consumers:consumer_bill' item.consumer.id %}?source=meter_reading&barangay_id={{ barangay.id }}"
                                    class="inline-flex items-center justify-center w-8 h-8 rounded bg-green-600 text-white hover:bg-green-700 transition-colors flex-shrink-0"
                                    title="View Consumer Bills">
                                     <i class="bi bi-receipt text-lg"></i>

@@ -1020,9 +1020,10 @@
             });
         }
 
-        // Set active nav link based on current path with prefix matching
+            // Set active nav link based on current path with prefix matching
         function setActiveNavLink() {
             const path = window.location.pathname;
+            const queryParams = new URLSearchParams(window.location.search);
             const active = ['bg-primary-100', 'text-primary-700', 'border-l-4', 'border-primary-600', 'font-semibold'];
 
             // Extra URL prefixes that should highlight a specific nav link
@@ -1039,6 +1040,13 @@
                 '{% url "consumers:admin_verification" %}':  ['/user-management/', '/user/'],
                 '{% url "consumers:user_login_history" %}':  ['/session/'],
             };
+
+            // Setup exclusions based on query parameters
+            // If we're on a bill page but from meter readings, remove the consumer management prefix match
+            if (path.startsWith('/consumer/') && queryParams.get('source') === 'meter_reading') {
+               extraPrefixes['{% url "consumers:consumer_management" %}'] = extraPrefixes['{% url "consumers:consumer_management" %}'].filter(p => p !== '/consumer/');
+               extraPrefixes['{% url "consumers:meter_reading_overview" %}'].push('/consumer/');
+            }
 
             // Collect all nav links with their match prefixes
             const navLinks = [];

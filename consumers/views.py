@@ -1931,8 +1931,7 @@ def system_management(request):
                     raise ValueError(f"{name} must be between 1 and 28.")
 
             # Validate reading period logic
-            if reading_start > reading_end:
-                raise ValueError("Reading start day must be before or equal to reading end day.")
+            # Removed the reading_start > reading_end check to allow cross-month reading periods (e.g., 22nd to 8th)
 
             # =====================================================
             # UPDATE SETTINGS - All changes take effect immediately

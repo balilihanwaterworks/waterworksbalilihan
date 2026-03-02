@@ -126,10 +126,13 @@
                 </button>
             </form>
 
-            <!-- Forgot Password Link -->
-            <div class="mt-4 text-center">
-                <a href="{% url 'consumers:forgot_password' %}" class="text-sm text-white hover:text-white/80 hover:underline">
-                    <i class="bi bi-envelope mr-1"></i>Forgot Password?
+            <!-- Forgot Password & Username Links -->
+            <div class="mt-4 flex justify-between text-center border-t border-white/20 pt-4">
+                <a href="{% url 'consumers:forgot_username' %}" class="text-sm text-white hover:text-white/80 hover:underline" title="Recover your username via email or name">
+                    <i class="bi bi-person-fill-exclamation mr-1"></i>Forgot Username?
+                </a>
+                <a href="{% url 'consumers:forgot_password' %}" class="text-sm text-white hover:text-white/80 hover:underline" title="Superadmins only: Reset password via email">
+                    <i class="bi bi-shield-lock mr-1"></i>Forgot Password?
                 </a>
             </div>
         </div>

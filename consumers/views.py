@@ -6286,7 +6286,6 @@ def create_user(request):
         # Apply proper casing to first name and last name
         first_name = proper_case(request.POST.get('first_name', '').strip())
         last_name = proper_case(request.POST.get('last_name', '').strip())
-        email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
         password_confirm = request.POST.get('password_confirm', '')
         assigned_barangay_id = request.POST.get('assigned_barangay')
@@ -6333,7 +6332,6 @@ def create_user(request):
                 username=username,
                 first_name=first_name,
                 last_name=last_name,
-                email=email,
                 is_staff=is_staff,
                 is_superuser=is_superuser,
                 is_active=True
@@ -6378,7 +6376,6 @@ def edit_user(request, user_id):
     if request.method == 'POST':
         user.first_name = request.POST.get('first_name', '').strip()
         user.last_name = request.POST.get('last_name', '').strip()
-        user.email = request.POST.get('email', '').strip()
         user.is_staff = request.POST.get('is_staff') == 'on'
         user.is_active = request.POST.get('is_active') == 'on'
 

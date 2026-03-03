@@ -3075,7 +3075,7 @@ def home(request):
     from django.db.models import Sum as _Sum
     today_collections = Payment.objects.filter(
         payment_date__date=today
-    ).aggregate(total=_Sum('amount_paid'))['total'] or Decimal('0.00')
+    ).aggregate(total=_Sum('amount'))['total'] or Decimal('0.00')
     today_payments_count = Payment.objects.filter(payment_date__date=today).count()
 
     # Role for the template
@@ -6034,113 +6034,6 @@ def payment_receipt(request, payment_id):
         'previous_reading_value': previous_reading_value,
         'breakdown': breakdown
     })
-@login_required
-@role_required('cashier', 'admin', 'superadmin')
-def collection_reports(request):
-    """
-    Dedicated dashboard for Cashiers and Managers to view daily and monthly collection summaries.
-    - Daily Cash / Online totals
-    - Monthly Billed vs. Collected vs. Unpaid (Delinquent)
-    """
-    from django.db.models import Sum, Count, Q
-    from datetime import datetime, date
-    import calendar
-
-    # --- Date Parsing ---
-    # Default to today, but allow filtering by a specific date
-    selected_date_str = request.GET.get('date', timezone.now().date().strftime('%Y-%m-%d'))
-    try:
-        report_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        report_date = timezone.now().date()
-
-    # --- 1. DAILY COLLECTION METRICS (for `report_date`) ---
-    todays_payments = Payment.objects.filter(payment_date__date=report_date)
-    
-    # Total Collected Today
-    daily_total = todays_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    
-    # By Payment Method
-    daily_cash = todays_payments.filter(payment_method='cash').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    daily_online = todays_payments.exclude(payment_method='cash').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    
-    # By Usage Type (Residential vs Commercial)
-    daily_residential = todays_payments.filter(consumer__usage_type='residential').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    daily_commercial = todays_payments.filter(consumer__usage_type='commercial').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    # Breakdown of individual payments for the day
-    recent_collections = todays_payments.select_related('consumer', 'bill', 'cashier').order_by('-payment_date')
-
-    # --- 2. MONTHLY INCOME SUMMARY ---
-    # We look at all Bills generated in the current month, and see their status
-    month_start = report_date.replace(day=1)
-    last_day = calendar.monthrange(report_date.year, report_date.month)[1]
-    month_end = report_date.replace(day=last_day)
-
-    monthly_bills = Bill.objects.filter(billing_period__range=[month_start, month_end])
-    
-    monthly_billed = monthly_bills.aggregate(total=Sum('total_amount_due'))['total'] or Decimal('0.00')
-    
-    # What was actually collected against THESE bills
-    monthly_collected = monthly_bills.filter(status='paid').aggregate(total=Sum('total_amount_due'))['total'] or Decimal('0.00')
-    
-    # What is still unpaid
-    monthly_unpaid = monthly_bills.exclude(status='paid').aggregate(total=Sum('total_amount_due'))['total'] or Decimal('0.00')
-
-    # Calculate collection efficiency percentage
-    collection_rate = 0
-    if monthly_billed > 0:
-        collection_rate = int((monthly_collected / monthly_billed) * 100)
-
-    context = {
-        'report_date': report_date,
-        'report_date_str': report_date.strftime('%Y-%m-%d'),
-        # Daily
-        'daily_total': daily_total,
-        'daily_cash': daily_cash,
-        'daily_online': daily_online,
-        'daily_residential': daily_residential,
-        'daily_commercial': daily_commercial,
-        'recent_collections': recent_collections,
-        # Monthly
-        'month_name': report_date.strftime('%B %Y'),
-        'monthly_billed': monthly_billed,
-        'monthly_collected': monthly_collected,
-        'monthly_unpaid': monthly_unpaid,
-        'collection_rate': collection_rate,
-    }
-    return render(request, 'consumers/collection_reports.html', context)
-
-
-@login_required
-@role_required('cashier', 'admin', 'superadmin')
-def print_collection_report(request):
-    """Printable version of the daily collection report."""
-    from django.db.models import Sum
-    from datetime import datetime
-
-    selected_date_str = request.GET.get('date', timezone.now().date().strftime('%Y-%m-%d'))
-    try:
-        report_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        report_date = timezone.now().date()
-
-    todays_payments = Payment.objects.filter(payment_date__date=report_date).select_related('consumer', 'cashier').order_by('-payment_date')
-    daily_total = todays_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    daily_cash = todays_payments.filter(payment_method='cash').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    daily_online = todays_payments.exclude(payment_method='cash').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    context = {
-        'report_date': report_date,
-        'payments': todays_payments,
-        'daily_total': daily_total,
-        'daily_cash': daily_cash,
-        'daily_online': daily_online,
-        'printed_by': request.user.get_full_name() or request.user.username,
-        'print_time': timezone.now(),
-    }
-    return render(request, 'consumers/print_collection_report.html', context)
-
 
 
 @login_required

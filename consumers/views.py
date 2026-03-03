@@ -492,21 +492,24 @@ def api_submit_manual_reading(request):
             try:
                 # Check if Cloudinary is configured and available
                 if not CLOUDINARY_AVAILABLE or cloudinary_uploader is None:
-                    return JsonResponse({'error': 'Image upload not configured'}, status=500)
-
-                # Upload to Cloudinary
-                upload_result = cloudinary_uploader.upload(
-                    f"data:image/jpeg;base64,{proof_image_base64}",
-                    folder="waterworks/meter_proofs",
-                    public_id=f"reading_{consumer.id_number}_{reading_date}",
-                    overwrite=True,
-                    resource_type="image"
-                )
-                proof_image_url = upload_result.get('secure_url')
+                    import logging
+                    logging.warning("Cloudinary not configured. Skipping image upload for reading.")
+                else:
+                    # Upload to Cloudinary
+                    upload_result = cloudinary_uploader.upload(
+                        f"data:image/jpeg;base64,{proof_image_base64}",
+                        folder="waterworks/meter_proofs",
+                        public_id=f"reading_{consumer.id_number}_{reading_date}",
+                        overwrite=True,
+                        resource_type="image"
+                    )
+                    proof_image_url = upload_result.get('secure_url')
             except Exception as e:
                 import logging
                 logging.error(f"Cloudinary upload error: {e}")
-                return JsonResponse({'error': 'Failed to upload proof image'}, status=500)
+                # We do NOT return a 500 here anymore.
+                # If the image fails, we still want to save the actual reading numbers.
+                proof_image_url = None
 
         # Create meter reading (NOT confirmed - needs admin review)
         reading = MeterReading.objects.create(

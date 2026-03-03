@@ -618,7 +618,6 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeChangeDetail();
 });
 </script>
-{% endblock %}
 
 {% if request.user.is_superuser %}
 <!-- Backup Database Confirmation Modal -->
@@ -675,3 +674,5 @@ document.addEventListener('keydown', function(e) {
     </div>
 </div>
 {% endif %}
+
+{% endblock %}

@@ -64,7 +64,7 @@
         {% endif %}
 
         <!-- Card 3: Today's Collections (All roles) -->
-        <a href="{% url 'consumers:collection_reports' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-success-300 transition-all relative overflow-hidden">
+        <a href="{% url 'consumers:reports' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-success-300 transition-all relative overflow-hidden">
             <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
                 <i class="bi bi-cash-stack text-success-600" style="font-size: 5rem;"></i>
             </div>
@@ -151,7 +151,7 @@
             </a>
 
             <!-- Collection Report -->
-            <a href="{% url 'consumers:collection_reports' %}"
+            <a href="{% url 'consumers:reports' %}"
                class="bg-warning-500 hover:bg-warning-600 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
                 <i class="bi bi-bar-chart-fill text-2xl"></i>
                 <span class="text-xs font-semibold">View Reports</span>

@@ -3075,7 +3075,7 @@ def home(request):
     from django.db.models import Sum as _Sum
     today_collections = Payment.objects.filter(
         payment_date__date=today
-    ).aggregate(total=_Sum('amount'))['total'] or Decimal('0.00')
+    ).aggregate(total=_Sum('amount_paid'))['total'] or Decimal('0.00')
     today_payments_count = Payment.objects.filter(payment_date__date=today).count()
 
     # Role for the template

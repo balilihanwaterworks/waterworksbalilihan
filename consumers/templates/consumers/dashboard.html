@@ -1,0 +1,281 @@
+{% extends 'consumers/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block main_content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- ====================================================
+         WELCOME BANNER
+         ==================================================== -->
+    <div class="bg-gradient-to-r from-primary-700 to-primary-500 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+        <div class="absolute -right-8 -top-8 opacity-10">
+            <i class="bi bi-droplet-fill" style="font-size: 8rem;"></i>
+        </div>
+        <div class="relative z-10">
+            <p class="text-primary-200 text-sm font-medium mb-1">{{ current_date|date:"l, F d, Y" }}</p>
+            <h1 class="text-2xl font-bold text-white mb-1">
+                Welcome back, {{ request.user.get_full_name|default:request.user.username }}! 👋
+            </h1>
+            <p class="text-primary-200 text-sm">
+                {% if user_role == 'superadmin' %}Superadmin — Full system access
+                {% elif user_role == 'admin' %}Admin — Operations & Reporting
+                {% elif user_role == 'cashier' %}Cashier — Payment Processing
+                {% else %}Staff{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         METRIC CARDS — Role-based display
+         ==================================================== -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Card 1: Active Consumers (Admin/Superadmin only) -->
+        {% if user_role == 'superadmin' or user_role == 'admin' %}
+        <a href="{% url 'consumers:consumer_management' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-primary-300 transition-all relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i class="bi bi-people-fill text-primary-600" style="font-size: 5rem;"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center flex-shrink-0">
+                    <i class="bi bi-people-fill text-primary-600 text-lg"></i>
+                </div>
+                <p class="text-sm font-medium text-dark-500">Active Consumers</p>
+            </div>
+            <p class="text-3xl font-bold text-dark-900">{{ connected_count|intcomma }}</p>
+        </a>
+
+        <!-- Card 2: Disconnected -->
+        <a href="{% url 'consumers:disconnected_consumers' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-danger-300 transition-all relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i class="bi bi-plug-fill text-danger-600" style="font-size: 5rem;"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-danger-100 flex items-center justify-center flex-shrink-0">
+                    <i class="bi bi-plug-fill text-danger-600 text-lg"></i>
+                </div>
+                <p class="text-sm font-medium text-dark-500">Disconnected</p>
+            </div>
+            <p class="text-3xl font-bold text-danger-700">{{ disconnected_count|intcomma }}</p>
+        </a>
+        {% endif %}
+
+        <!-- Card 3: Today's Collections (All roles) -->
+        <a href="{% url 'consumers:collection_reports' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-success-300 transition-all relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i class="bi bi-cash-stack text-success-600" style="font-size: 5rem;"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-success-100 flex items-center justify-center flex-shrink-0">
+                    <i class="bi bi-cash-stack text-success-600 text-lg"></i>
+                </div>
+                <p class="text-sm font-medium text-dark-500">Collected Today</p>
+            </div>
+            <p class="text-3xl font-bold text-success-700">₱{{ today_collections|intcomma }}</p>
+            <p class="text-xs text-dark-400 mt-1">{{ today_payments_count }} transaction{{ today_payments_count|pluralize }}</p>
+        </a>
+
+        <!-- Card 4: Pending Readings (Admin/Superadmin only) OR Delinquent for cashiers -->
+        {% if user_role == 'superadmin' or user_role == 'admin' %}
+        <a href="{% url 'consumers:pending_readings' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-warning-300 transition-all relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i class="bi bi-camera-fill text-warning-600" style="font-size: 5rem;"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                    {% if pending_readings_count > 0 %}bg-warning-100{% else %}bg-light-100{% endif %}">
+                    <i class="bi bi-camera-fill text-lg
+                        {% if pending_readings_count > 0 %}text-warning-600{% else %}text-dark-400{% endif %}"></i>
+                </div>
+                <p class="text-sm font-medium text-dark-500">Pending Readings</p>
+            </div>
+            <p class="text-3xl font-bold {% if pending_readings_count > 0 %}text-warning-700{% else %}text-dark-900{% endif %}">
+                {{ pending_readings_count|intcomma }}
+            </p>
+            <p class="text-xs text-dark-400 mt-1">awaiting admin review</p>
+        </a>
+        {% else %}
+        <a href="{% url 'consumers:payment_history' %}" class="group block bg-white rounded-xl p-5 border border-light-200 shadow-sm hover:shadow-md hover:border-info-300 transition-all relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i class="bi bi-receipt text-info-600" style="font-size: 5rem;"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-info-100 flex items-center justify-center flex-shrink-0">
+                    <i class="bi bi-receipt text-info-600 text-lg"></i>
+                </div>
+                <p class="text-sm font-medium text-dark-500">This Month Revenue</p>
+            </div>
+            <p class="text-3xl font-bold text-info-700">₱{{ monthly_revenue|intcomma }}</p>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- ====================================================
+         QUICK ACTIONS ROW
+         ==================================================== -->
+    <div>
+        <h2 class="text-sm font-bold tracking-wider text-dark-500 uppercase mb-3 flex items-center gap-2">
+            <i class="bi bi-lightning-charge-fill text-warning-500"></i> Quick Actions
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <!-- Process Payment (All roles) -->
+            <a href="{% url 'consumers:process_payment' %}"
+               class="bg-success-600 hover:bg-success-700 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-cash-coin text-2xl"></i>
+                <span class="text-xs font-semibold">Process Payment</span>
+            </a>
+
+            <!-- Inquire Bill (All roles) -->
+            <a href="{% url 'consumers:inquire' %}"
+               class="bg-info-600 hover:bg-info-700 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-search text-2xl"></i>
+                <span class="text-xs font-semibold">Inquire Bill</span>
+            </a>
+
+            {% if user_role == 'superadmin' or user_role == 'admin' %}
+            <!-- Add Consumer -->
+            <a href="{% url 'consumers:add_consumer' %}"
+               class="bg-primary-600 hover:bg-primary-700 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-person-plus text-2xl"></i>
+                <span class="text-xs font-semibold">Add Consumer</span>
+            </a>
+
+            <!-- Meter Readings -->
+            <a href="{% url 'consumers:meter_reading_overview' %}"
+               class="bg-dark-700 hover:bg-dark-800 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-speedometer2 text-2xl"></i>
+                <span class="text-xs font-semibold">Meter Readings</span>
+            </a>
+
+            <!-- Collection Report -->
+            <a href="{% url 'consumers:collection_reports' %}"
+               class="bg-warning-500 hover:bg-warning-600 text-white rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-bar-chart-fill text-2xl"></i>
+                <span class="text-xs font-semibold">View Reports</span>
+            </a>
+            {% endif %}
+
+            <!-- Payment History (All roles) -->
+            <a href="{% url 'consumers:payment_history' %}"
+               class="bg-light-300 hover:bg-light-400 text-dark-800 rounded-xl p-4 flex flex-col items-center gap-2 transition-all shadow-sm hover:shadow-md text-center">
+                <i class="bi bi-receipt text-2xl"></i>
+                <span class="text-xs font-semibold">Transactions</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         BOTTOM ROW: Recent Activity + Chart
+         ==================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Recent Activities Log (Left 2/3) -->
+        <div class="lg:col-span-2">
+            <h2 class="text-sm font-bold tracking-wider text-dark-500 uppercase mb-3 flex items-center gap-2">
+                <i class="bi bi-activity text-primary-500"></i> Recent System Activity
+            </h2>
+            <div class="bg-white rounded-xl shadow-sm border border-light-200 overflow-hidden">
+                <div class="overflow-x-auto max-h-[400px]">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-light-100 text-dark-600 font-semibold sticky top-0 border-b border-light-200">
+                            <tr>
+                                <th class="px-4 py-3">Time</th>
+                                <th class="px-4 py-3">Staff</th>
+                                <th class="px-4 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-light-100">
+                            {% for activity in recent_activities %}
+                            <tr class="hover:bg-light-50 transition-colors">
+                                <td class="px-4 py-3 text-dark-400 whitespace-nowrap text-xs">{{ activity.created_at|date:"M d, h:i A" }}</td>
+                                <td class="px-4 py-3 font-medium text-dark-800">{{ activity.user.get_full_name|default:activity.user.username }}</td>
+                                <td class="px-4 py-3 text-dark-600">{{ activity.description|truncatechars:65 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-4 py-8 text-center text-dark-400">
+                                    <i class="bi bi-inbox text-3xl block mb-2 opacity-50"></i>
+                                    <p>No recent activities recorded yet.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mini Chart (Right 1/3) -->
+        <div class="lg:col-span-1">
+            <h2 class="text-sm font-bold tracking-wider text-dark-500 uppercase mb-3 flex items-center gap-2">
+                <i class="bi bi-pie-chart-fill text-success-500"></i> Billing Status (This Month)
+            </h2>
+            <div class="bg-white rounded-xl shadow-sm border border-light-200 p-5 flex flex-col items-center justify-center h-full min-h-[240px]">
+                {% if paid_bills > 0 or pending_bills > 0 %}
+                <canvas id="billingDonutChart" width="200" height="200"></canvas>
+                <div class="flex gap-4 mt-4 text-xs">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-success-500 block"></span>
+                        <span class="text-dark-600">Paid ({{ paid_bills }})</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-danger-500 block"></span>
+                        <span class="text-dark-600">Unpaid ({{ pending_bills }})</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-dark-400">
+                    <i class="bi bi-bar-chart text-4xl block mb-2 opacity-50"></i>
+                    <p class="text-sm">No billing data available yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if paid_bills > 0 or pending_bills > 0 %}
+<script>
+(function() {
+    const ctx = document.getElementById('billingDonutChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Paid', 'Unpaid / Pending'],
+            datasets: [{
+                data: [{{ paid_bills }}, {{ pending_bills }}],
+                backgroundColor: ['#22c55e', '#ef4444'],
+                borderColor: ['#16a34a', '#dc2626'],
+                borderWidth: 2,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
+                            return ` ${ctx.label}: ${ctx.parsed} bills (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

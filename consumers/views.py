@@ -2895,12 +2895,10 @@ def password_reset_complete(request):
 
 @login_required
 def home(request):
-    """Staff dashboard showing key metrics and delinquent bills."""
-    # Cashier role only has access to payment and transaction history
-    if hasattr(request.user, 'staffprofile') and request.user.staffprofile.role == 'cashier':
-        return redirect('consumers:process_payment')
-
+    """Staff dashboard - unified landing page for all roles with role-based metric widgets."""
     from .models import Notification
+
+
 
     # Auto-cleanup: Delete notifications older than 1 month
     one_month_ago = datetime.now() - timedelta(days=30)
@@ -3066,6 +3064,27 @@ def home(request):
     # Create a date object for proper month/year formatting in template
     selected_date = date(selected_year, selected_month, 1)
 
+    # ----- New Dashboard Additions -----
+    # Recent Activity Log (last 10 events across the system)
+    recent_activities = UserActivity.objects.select_related('user').order_by('-created_at')[:10]
+
+    # Pending meter readings from the mobile app waiting for admin confirmation
+    pending_readings_count = MeterReading.objects.filter(is_confirmed=False).count()
+
+    # Today's Collections (by date only, not datetime)
+    from django.db.models import Sum as _Sum
+    today_collections = Payment.objects.filter(
+        payment_date__date=today
+    ).aggregate(total=_Sum('amount'))['total'] or Decimal('0.00')
+    today_payments_count = Payment.objects.filter(payment_date__date=today).count()
+
+    # Role for the template
+    user_role = 'superadmin'
+    if hasattr(request.user, 'staffprofile'):
+        user_role = request.user.staffprofile.role
+    if request.user.is_superuser:
+        user_role = 'superadmin'
+
     context = {
         'connected_count': connected_count,
         'disconnected_count': disconnected_count,
@@ -3074,8 +3093,8 @@ def home(request):
         'total_delinquent_amount': total_delinquent_amount,
         'selected_month': selected_month,
         'selected_year': selected_year,
-        'selected_date': selected_date,  # For template date formatting
-        'current_date': datetime.now(),  # For dynamic date display
+        'selected_date': selected_date,
+        'current_date': datetime.now(),
         # Revenue data
         'today_revenue': today_revenue,
         'monthly_revenue': monthly_revenue,
@@ -3085,7 +3104,7 @@ def home(request):
         # Chart data
         'revenue_labels': json.dumps(revenue_labels),
         'revenue_data': json.dumps(revenue_data),
-        'revenue_list': revenue_list,  # For template iteration
+        'revenue_list': revenue_list,
         'paid_bills': paid_bills,
         'pending_bills': pending_bills,
         'barangay_labels': json.dumps(barangay_labels),
@@ -3093,11 +3112,16 @@ def home(request):
         'consumption_labels': json.dumps(consumption_labels),
         'consumption_data': json.dumps(consumption_data),
         'total_bills': total_bills,
-        # Consumer Bill Status by Barangay
         'all_barangays': all_barangays,
         'consumer_bill_status': json.dumps(consumer_bill_status, default=str),
+        # Dashboard additions
+        'recent_activities': recent_activities,
+        'pending_readings_count': pending_readings_count,
+        'today_collections': today_collections,
+        'today_payments_count': today_payments_count,
+        'user_role': user_role,
     }
-    return render(request, 'consumers/home.html', context)
+    return render(request, 'consumers/dashboard.html', context)
 
 
 

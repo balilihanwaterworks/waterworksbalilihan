@@ -5578,12 +5578,28 @@ def pending_readings_view(request):
     """
     today = date.today()
 
+    # --- FILTER PARAMS ---
+    selected_barangay_id = request.GET.get('barangay', '')
+    search_query = request.GET.get('search', '').strip()
+
     # Get pending readings (not confirmed, not rejected, submitted with proof)
     pending_readings = MeterReading.objects.filter(
         is_confirmed=False,
         is_rejected=False,
         source='app_manual'  # Manual entry from Smart Meter Reader app
     ).select_related('consumer', 'consumer__barangay', 'submitted_by').order_by('-reading_date')
+
+    # Apply barangay filter
+    if selected_barangay_id:
+        pending_readings = pending_readings.filter(consumer__barangay_id=selected_barangay_id)
+
+    # Apply name / ID search filter
+    if search_query:
+        pending_readings = pending_readings.filter(
+            Q(consumer__first_name__icontains=search_query) |
+            Q(consumer__last_name__icontains=search_query) |
+            Q(consumer__id_number__icontains=search_query)
+        )
 
     # Add previous reading info to each
     for reading in pending_readings:
@@ -5612,10 +5628,16 @@ def pending_readings_view(request):
         rejected_at__date=today
     ).count()
 
+    # All barangays for dropdown
+    all_barangays = Barangay.objects.all().order_by('name')
+
     context = {
         'pending_readings': pending_readings,
         'confirmed_today_count': confirmed_today_count,
         'rejected_today_count': rejected_today_count,
+        'all_barangays': all_barangays,
+        'selected_barangay_id': selected_barangay_id,
+        'search_query': search_query,
     }
 
     return render(request, 'consumers/pending_readings.html', context)

@@ -22,25 +22,16 @@
     </div>
 
     <!-- Filter Bar -->
-    <form method="get" class="bg-white border border-gray-200 rounded-lg px-4 py-3 mb-4 flex flex-wrap items-end gap-3 shadow-sm">
-        <!-- Search by Name / ID -->
-        <div class="flex-1 min-w-[180px]">
-            <label class="block text-xs font-medium text-gray-600 mb-1">
-                <i class="bi bi-search mr-1"></i> Search Name / ID
-            </label>
-            <input type="text"
-                   name="search"
-                   value="{{ search_query }}"
-                   placeholder="Enter name or ID number..."
-                   class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent">
-        </div>
+    <form method="get" id="filterForm" class="bg-white border border-gray-200 rounded-lg px-4 py-3 mb-4 flex flex-wrap items-end gap-3 shadow-sm">
 
-        <!-- Barangay Filter -->
+        <!-- Barangay Filter (LEFT) -->
         <div class="flex-1 min-w-[160px]">
             <label class="block text-xs font-medium text-gray-600 mb-1">
                 <i class="bi bi-geo-alt mr-1"></i> Barangay
             </label>
-            <select name="barangay"
+            <select id="barangaySelect"
+                    name="barangay"
+                    onchange="document.getElementById('filterForm').submit()"
                     class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white">
                 <option value="">-- All Barangays --</option>
                 {% for brgy in all_barangays %}
@@ -51,20 +42,57 @@
             </select>
         </div>
 
-        <!-- Buttons -->
-        <div class="flex gap-2 items-end">
-            <button type="submit"
-                    class="px-4 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg text-sm inline-flex items-center gap-1">
-                <i class="bi bi-funnel-fill"></i> Filter
-            </button>
-            {% if search_query or selected_barangay_id %}
+        <!-- Search by Name / ID (RIGHT) -->
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">
+                <i class="bi bi-search mr-1"></i> Search Name / ID
+            </label>
+            <div class="relative">
+                <input type="text"
+                       id="searchInput"
+                       name="search"
+                       value="{{ search_query }}"
+                       placeholder="Type to search..."
+                       autocomplete="off"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent">
+                <span id="searchSpinner" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                </span>
+            </div>
+        </div>
+
+        <!-- Clear Button (only when filter is active) -->
+        {% if search_query or selected_barangay_id %}
+        <div class="flex items-end">
             <a href="{% url 'consumers:pending_readings' %}"
                class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg text-sm inline-flex items-center gap-1">
                 <i class="bi bi-x-lg"></i> Clear
             </a>
-            {% endif %}
         </div>
+        {% endif %}
     </form>
+
+    <script>
+    // Auto-submit search with 400ms debounce
+    (function() {
+        const input = document.getElementById('searchInput');
+        const spinner = document.getElementById('searchSpinner');
+        const form = document.getElementById('filterForm');
+        let timer = null;
+
+        input.addEventListener('input', function() {
+            clearTimeout(timer);
+            spinner.classList.remove('hidden');
+            timer = setTimeout(function() {
+                form.submit();
+            }, 400);
+        });
+    })();
+    </script>
+
 
     <!-- Stats -->
     <div class="flex gap-3 mb-4">

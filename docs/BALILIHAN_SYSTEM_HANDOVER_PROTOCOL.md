@@ -1,3 +1,5 @@
+
+
 # Balilihan Waterworks System - Official Turnover & Transition Protocol
 
 This document outlines the step-by-step process for transferring the Balilihan Waterworks System from the developer's personal accounts (GitHub, Render) to the official client/municipality accounts.
@@ -35,20 +37,28 @@ The source code must be transferred to the client's official GitHub account or o
 
 ---
 
-## ☁️ Phase 3: Hosting & Database Handover (Render)
-Since the system is currently hosted on your personal Render account, you have two choices for turning this over:
+## ☁️ Phase 3: Hosting & Database Handover (Render & Neon DB)
+Since the system is currently hosted on your personal Render account and uses Neon for the PostgreSQL database, you have two choices for turning this over:
 
-### Option A: Deploying on the Client's Render Account (Most Professional)
-1. Have the client create a new account on [Render.com](https://render.com) using their official email.
-2. Link their new Render account to the newly transferred GitHub repository.
-3. **Create the Database:** Setup a new PostgreSQL database on their Render account.
-4. **Create the Web Service:** Setup the Django Web Service on their account, mirroring your build (`./build.sh`) and start (`gunicorn waterworks.wsgi`) commands.
-5. **Set Environment Variables:** Copy the variables from your account to theirs, making sure to use the *new* `DATABASE_URL`.
-6. **Migrate Data:** From your local machine, use pg_dump / pg_restore or Django's `loaddata` to migrate the existing production data into their new database.
-7. **Shutdown:** Once verified, suspend/delete the app on your personal Render account.
+### Option A: Transferring to the Client's own Accounts (Most Professional)
+1. **Render Web Server**: 
+   - Have the client create a new account on [Render.com](https://render.com) using their official email.
+   - Link their new Render account to the newly transferred GitHub repository.
+   - Setup the Django Web Service on their account, mirroring your build (`./build.sh`) and start (`gunicorn waterworks.wsgi`) commands.
+2. **Neon Database**:
+   - Have the client create a free or paid database tier on [Neon.tech](https://neon.tech/).
+   - Ask them to generate a new `DATABASE_URL` string from their Neon Dashboard.
+3. **Set Environment Variables**: 
+   - Copy all environment variables from your Render account to theirs.
+   - **CRITICAL:** Replace the old `DATABASE_URL` with their new Neon `DATABASE_URL`.
+4. **Migrate Data**: 
+   - Connect to the old Neon database using `pg_dump` and export the database. 
+   - Restore the `.sql` dump to the client's new Neon database instance using `pg_restore`.
+   - Alternatively, use the Django `.json` Fixture Backup to migrate data using `loaddata`.
+5. **Shutdown**: Once verified, suspend/delete the app and database on your personal Render and Neon accounts.
 
-### Option B: Providing Access via Render Workspaces
-1. If the client is paying you to maintain the hosting, you can upgrade Render to a Team plan and invite them to the workspace so they have visibility over the servers and billing.
+### Option B: Providing Access via Team Workspaces
+1. If the client is paying you to maintain the hosting and databases, you can simply upgrade Render/Neon to a Team plan and invite their official email to the workspace so they have visibility over billing and server status.
 
 ---
 

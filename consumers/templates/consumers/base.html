@@ -1048,7 +1048,7 @@
                extraPrefixes['{% url "consumers:meter_reading_overview" %}'].push('/consumer/');
             }
 
-            // Collect all nav links with their match prefixes
+            // Collect all nav links and their potential matches
             const navLinks = [];
             document.querySelectorAll('.nav-link-modern').forEach(link => {
                 const href = link.getAttribute('href');
@@ -1059,15 +1059,20 @@
                 navLinks.push({ el: link, href: href, prefixes: prefixes });
             });
 
-            // Sort by total prefix specificity (longer href = more specific, checked first)
-            navLinks.sort((a, b) => b.href.length - a.href.length);
-
-            // Find the best (most specific) match
+            // Find the best match by longest overlapping prefix
             let bestLink = null;
+            let longestMatchLength = 0;
+
             for (const nav of navLinks) {
-                if (nav.prefixes.some(prefix => path.startsWith(prefix))) {
-                    bestLink = nav.el;
-                    break;
+                // Find all prefixes for this link that actually match the current path
+                const matchingPrefixes = nav.prefixes.filter(prefix => path.startsWith(prefix));
+                if (matchingPrefixes.length > 0) {
+                    // Find the longest match string length out of the valid prefixes
+                    const maxLength = Math.max(...matchingPrefixes.map(p => p.length));
+                    if (maxLength > longestMatchLength) {
+                        longestMatchLength = maxLength;
+                        bestLink = nav.el;
+                    }
                 }
             }
 

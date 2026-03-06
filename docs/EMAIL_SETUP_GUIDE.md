@@ -179,12 +179,12 @@ EMAIL_HOST_PASSWORD=xkcd1234abcd5678
 DEFAULT_FROM_EMAIL=Balilihan Waterworks <noreply@balilihan-waterworks.com>
 ```
 
-#### **For Production (Railway)**
+#### **For Production (Render)**
 
-1. Go to your Railway project dashboard
-2. Click on your service (web)
-3. Navigate to **Variables** tab
-4. Click **+ New Variable**
+1. Go to your Render dashboard: https://dashboard.render.com
+2. Click on your web service
+3. Navigate to **Environment** tab
+4. Click **Add Environment Variable**
 5. Add the following variables one by one:
 
 | Variable Name | Example Value |
@@ -193,12 +193,12 @@ DEFAULT_FROM_EMAIL=Balilihan Waterworks <noreply@balilihan-waterworks.com>
 | `EMAIL_HOST_PASSWORD` | `abcdefghijklmnop` |
 | `DEFAULT_FROM_EMAIL` | `Balilihan Waterworks <noreply@balilihan-waterworks.com>` |
 
-6. Click **Add** for each variable
-7. Railway will automatically redeploy with the new configuration
+6. Click **Save Changes**
+7. Render will automatically redeploy with the new configuration
 
 **Screenshot Guidance:**
 ```
-Railway Dashboard → Your Service → Variables → + New Variable
+Render Dashboard → Your Service → Environment → Add Environment Variable
 ```
 
 ### **Step 5: Verify Configuration**
@@ -406,7 +406,7 @@ Purpose: Mixed use (personal + system)
 - 🔐 **Store in .env file** (never commit to Git)
 - 🚫 **Never hardcode** in source code
 - 🔄 **Rotate regularly** (every 6 months)
-- 📋 **Use secrets manager** in production (Railway Variables)
+- 📋 **Use secrets manager** in production (Render Environment Variables)
 
 ### **3. Add .env to .gitignore**
 
@@ -476,15 +476,15 @@ To customize:
 All password reset requests are logged in:
 - **UserActivity** model (database)
 - **Console logs** (development)
-- **Railway logs** (production)
+- **Render logs** (production)
 
 View logs:
 ```bash
 # Local development
 python manage.py runserver
 
-# Production (Railway)
-Railway Dashboard → Deployments → View Logs
+# Production (Render)
+Render Dashboard → Your Service → Logs
 ```
 
 ---
@@ -512,7 +512,7 @@ Railway Dashboard → Deployments → View Logs
 
 - [Gmail App Passwords Help](https://support.google.com/accounts/answer/185833)
 - [Django Email Documentation](https://docs.djangoproject.com/en/5.0/topics/email/)
-- [Railway Environment Variables](https://docs.railway.app/develop/variables)
+- [Render Environment Variables](https://render.com/docs/environment-variables)
 
 ---
 

@@ -200,10 +200,10 @@ CSRF_TRUSTED_ORIGINS.extend([
     'https://*.onrender.com',
 ])
 
-# CORS for mobile app - allow all origins for API endpoints
-# Mobile apps don't send Origin header the same way browsers do
-CORS_ALLOW_ALL_ORIGINS = True  # Allow mobile app connections
-
+# CORS for mobile app - restrict origins in production
+# Mobile apps don't send Origin header the same way browsers do, 
+# but allowing all is a security risk in production.
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bool)
 # CSRF and Session Cookie Configuration
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token

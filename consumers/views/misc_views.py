@@ -504,3 +504,17 @@ def permanently_delete_archived_user(request, archived_id):
         return redirect('consumers:archived_users')
 
     return redirect('consumers:archived_users')
+
+
+def ui_demo(request):
+    """Demonstration page for the modern HAT stack and custom components."""
+    import time
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    if request.headers.get('HX-Request') and request.GET.get('htmx'):
+        time.sleep(0.3) # Fake latency to show off HTMX speed
+        current_time = datetime.now().strftime("%I:%M:%S %p")
+        return HttpResponse(f"<div class='p-4 border-2 border-solid border-success-400 bg-success-50 rounded-lg text-success-800 font-mono text-sm shadow-inner'><i class='bi bi-check-circle-fill mr-2'></i>Server responded instantly via HTMX at {current_time}! Note how the page never reloaded or flashed white.</div>")
+        
+    return render(request, 'consumers/ui_demo.html')

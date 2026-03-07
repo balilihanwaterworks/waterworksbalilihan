@@ -120,4 +120,5 @@ urlpatterns = [
 
     # Debug/Admin Tools
     path('test-email/', views.test_email, name='test_email'),
+    path('ui-demo/', views.ui_demo, name='ui_demo'),
 ]

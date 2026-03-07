@@ -100,7 +100,6 @@
                        hx-get="{% url 'consumers:consumer_list' %}"
                        hx-trigger="input changed delay:500ms, search"
                        hx-target="#consumer-results"
-                       hx-include="#filterForm"
                        hx-indicator=".htmx-indicator">
             </div>
 
@@ -115,7 +114,6 @@
                         hx-get="{% url 'consumers:consumer_list' %}"
                         hx-trigger="change"
                         hx-target="#consumer-results"
-                        hx-include="#filterForm"
                         hx-indicator=".htmx-indicator">
                     <option value="">All Barangays</option>
                     {% for barangay in barangays %}
@@ -137,7 +135,6 @@
                         hx-get="{% url 'consumers:consumer_list' %}"
                         hx-trigger="change"
                         hx-target="#consumer-results"
-                        hx-include="#filterForm"
                         hx-indicator=".htmx-indicator">
                     <option value="">All Status</option>
                     <option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Connected</option>

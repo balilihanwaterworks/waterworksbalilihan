@@ -1,0 +1,33 @@
+{% comment %}
+Usage:
+{% include 'components/card.html' with title='My Card' icon='list' content_template='includes/my_content.html' %}
+Or wrap content in a variable and pass it as `content`. Django's include doesn't support block wrapping directly like Vue/React.
+{% endcomment %}
+
+<div class="card {{ extra_classes }}">
+    {% if title %}
+    <div class="card-header flex items-center gap-2 {{ header_classes }}">
+        {% if icon %}<i class="bi bi-{{ icon }} text-primary-600"></i>{% endif %}
+        {{ title }}
+        {% if subtitle %}<span class="text-xs font-normal text-dark-500 ml-2">{{ subtitle }}</span>{% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="card-body {{ body_classes }}">
+        {% if content_template %}
+            {% include content_template %}
+        {% else %}
+            {{ content|safe }}
+        {% endif %}
+    </div>
+
+    {% if footer_template or footer %}
+    <div class="px-6 py-4 border-t border-light-200 bg-light-50 {{ footer_classes }}">
+        {% if footer_template %}
+            {% include footer_template %}
+        {% else %}
+            {{ footer|safe }}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

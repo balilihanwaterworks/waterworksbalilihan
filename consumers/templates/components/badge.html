@@ -1,0 +1,8 @@
+{% comment %}
+Usage: {% include 'components/badge.html' with text='Active' variant='success' icon='check-circle-fill' %}
+{% endcomment %}
+
+<span class="badge badge-{{ variant|default:'info' }} {{ extra_classes }}">
+    {% if icon %}<i class="bi bi-{{ icon }} mr-1"></i>{% endif %}
+    {{ text }}
+</span>

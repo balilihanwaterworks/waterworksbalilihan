@@ -844,14 +844,19 @@ def consumer_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'consumers/consumer_list.html', {
+    context = {
         'consumers': page_obj,
         'barangays': barangays,
         'total_consumers': total_consumers,
         'connected_count': connected_count,
         'disconnected_count': disconnected_count,
         'this_month_count': this_month_count,
-    })
+    }
+    
+    if request.headers.get('HX-Request'):
+        return render(request, 'consumers/partials/consumer_table_only.html', context)
+    
+    return render(request, 'consumers/consumer_list.html', context)
 
 
 

@@ -1,0 +1,16 @@
+{% comment %}
+Usage:
+{% include 'components/stat_card.html' with title='Total Consumers' value='1,200' icon='people' variant='primary' %}
+{% endcomment %}
+
+<div class="stat-card hover:shadow-md transition-all duration-200 {{ extra_classes }}">
+    <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-{{ variant|default:'primary' }}-100 rounded-lg flex items-center justify-center">
+            <i class="bi bi-{{ icon }} text-{{ variant|default:'primary' }}-600 text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-xs font-medium text-dark-500 uppercase">{{ title }}</p>
+            <p class="text-2xl font-bold text-dark-900">{{ value }}</p>
+        </div>
+    </div>
+</div>

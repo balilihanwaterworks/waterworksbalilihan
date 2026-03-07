@@ -135,7 +135,7 @@ def calculate_water_bill(consumer, consumption):
 @rate_limit_login
 def staff_login(request):
     """Enhanced staff login with security tracking and rate limiting."""
-    from .decorators import get_client_ip, get_user_agent
+    from ..decorators import get_client_ip, get_user_agent
 
     if request.method == "POST":
         username = request.POST.get('username')
@@ -225,7 +225,7 @@ def forgot_password_request(request):
     Password reset request page for superuser/admin accounts.
     Sends secure reset token via email to the user's registered Gmail account.
     """
-    from .decorators import get_client_ip, get_user_agent
+    from ..decorators import get_client_ip, get_user_agent
     from django.core.mail import EmailMultiAlternatives
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
@@ -399,7 +399,7 @@ def account_recovery(request):
     """
     Unified account recovery - recovers username and generates password reset link.
     """
-    from .decorators import get_client_ip
+    from ..decorators import get_client_ip
 
     recovery_result = None
 
@@ -477,7 +477,7 @@ def password_reset_confirm(request, token):
     """
     Confirm password reset with token and set new password.
     """
-    from .decorators import get_client_ip, get_user_agent
+    from ..decorators import get_client_ip, get_user_agent
 
     try:
         reset_token = PasswordResetToken.objects.get(token=token)

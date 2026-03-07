@@ -238,7 +238,7 @@ def process_payment(request):
     POST (?consumer=X): create Payment, mark bill Paid, redirect to receipt
     """
     from ..utils import update_bill_penalty, get_payment_breakdown
-    from .models import Notification
+    from ..models import Notification
 
     system_settings = SystemSetting.objects.first()
 

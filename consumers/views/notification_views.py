@@ -141,7 +141,7 @@ def mark_notification_read(request, notification_id):
     """Mark a single notification as read (AJAX endpoint)."""
     if request.method == 'POST':
         try:
-            from .models import Notification
+            from ..models import Notification
 
             # Get the notification
             notification = get_object_or_404(Notification, id=notification_id)
@@ -166,7 +166,7 @@ def mark_all_notifications_read(request):
     """Mark all notifications as read for the current user (AJAX endpoint)."""
     if request.method == 'POST':
         try:
-            from .models import Notification
+            from ..models import Notification
             from django.db.models import Q
 
             # Mark all notifications for this user or global notifications as read

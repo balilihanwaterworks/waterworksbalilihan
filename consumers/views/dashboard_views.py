@@ -136,7 +136,7 @@ def calculate_water_bill(consumer, consumption):
 @login_required
 def home(request):
     """Staff dashboard - unified landing page for all roles with role-based metric widgets."""
-    from .models import Notification
+    from ..models import Notification
 
 
 

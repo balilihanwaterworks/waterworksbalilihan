@@ -328,7 +328,7 @@ def api_submit_reading(request):
             )
 
             # Create notification for new meter reading
-            from .models import Notification
+            from ..models import Notification
             from django.urls import reverse
             Notification.objects.create(
                 user=None,  # Notify all admins

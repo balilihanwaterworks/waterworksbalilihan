@@ -214,7 +214,7 @@ def backup_database(request):
 
     # ---- Tables to export ----
     # Each tuple: (filename_in_zip, queryset)
-    from .models import (
+    from ..models import (
         Consumer, Barangay, Purok, MeterBrand, Bill, Payment, MeterReading,
         SystemSetting, SystemSettingChangeLog, UserLoginEvent, UserActivity,
         StaffProfile
@@ -698,7 +698,7 @@ def user_login_history(request):
     barangay_filter: str = request.GET.get('barangay', '') # New barangay filter
     
     # Load barangays for the filter dropdown
-    from .models import Barangay
+    from ..models import Barangay
     barangays = Barangay.objects.all().order_by('name')
 
     # Get the latest event ID for each user using annotation and order_by

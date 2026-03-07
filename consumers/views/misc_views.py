@@ -451,7 +451,7 @@ def archived_users(request):
     View list of archived/deleted users.
     RESTRICTED: Superuser only.
     """
-    from .models import ArchivedUser
+    from ..models import ArchivedUser
 
     # Get search query parameter
     search_query = request.GET.get('search', '').strip()
@@ -493,7 +493,7 @@ def permanently_delete_archived_user(request, archived_id):
     Permanently delete an archived user record.
     RESTRICTED: Superuser only.
     """
-    from .models import ArchivedUser
+    from ..models import ArchivedUser
 
     archived_user = get_object_or_404(ArchivedUser, id=archived_id)
 

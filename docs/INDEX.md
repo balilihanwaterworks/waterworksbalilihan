@@ -17,6 +17,7 @@ Step-by-step instructions for operating and deploying the system.
 
 ## 🏗️ Architecture and Design
 High-level system overviews and technical blueprints.
+- [Frontend UI Architecture](architecture/FRONTEND_ARCHITECTURE.md)
 - [Program Hierarchy](architecture/PROGRAM_HIERARCHY.md)
 - [System Architecture](architecture/SYSTEM_ARCHITECTURE.md)
 - [System Flow](architecture/SYSTEM_FLOW.md)

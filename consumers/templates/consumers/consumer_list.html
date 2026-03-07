@@ -85,7 +85,6 @@
         <form method="get" action="{% url 'consumers:consumer_list' %}" class="grid grid-cols-1 md:grid-cols-4 gap-4" id="filterForm"
               hx-get="{% url 'consumers:consumer_list' %}"
               hx-target="#consumer-results"
-              hx-trigger="submit, keyup changed delay:500ms from:#search, change from:#barangay, change from:#status"
               hx-indicator=".htmx-indicator">
             <!-- Search -->
             <div class="md:col-span-2">
@@ -97,7 +96,12 @@
                        name="q"
                        value="{{ request.GET.q }}"
                        placeholder="Search by name, ID number, or phone"
-                       class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                       class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                       hx-get="{% url 'consumers:consumer_list' %}"
+                       hx-trigger="input changed delay:500ms, search"
+                       hx-target="#consumer-results"
+                       hx-include="#filterForm"
+                       hx-indicator=".htmx-indicator">
             </div>
 
             <!-- Barangay Filter -->
@@ -107,7 +111,12 @@
                 </label>
                 <select name="barangay"
                         id="barangay"
-                        class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        hx-get="{% url 'consumers:consumer_list' %}"
+                        hx-trigger="change"
+                        hx-target="#consumer-results"
+                        hx-include="#filterForm"
+                        hx-indicator=".htmx-indicator">
                     <option value="">All Barangays</option>
                     {% for barangay in barangays %}
                         <option value="{{ barangay.id }}" {% if request.GET.barangay == barangay.id|stringformat:"s" %}selected{% endif %}>
@@ -124,7 +133,12 @@
                 </label>
                 <select name="status"
                         id="status"
-                        class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        hx-get="{% url 'consumers:consumer_list' %}"
+                        hx-trigger="change"
+                        hx-target="#consumer-results"
+                        hx-include="#filterForm"
+                        hx-indicator=".htmx-indicator">
                     <option value="">All Status</option>
                     <option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Connected</option>
                     <option value="disconnected" {% if request.GET.status == "disconnected" %}selected{% endif %}>Disconnected</option>

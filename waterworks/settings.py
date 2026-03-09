@@ -271,9 +271,11 @@ try:
         )
         _email_logger.info(f"Cloudinary configured with cloud: {_cloud_name}")
     else:
-        _email_logger.warning("Cloudinary credentials not configured! Proof image uploads will fail.")
+        # Silently skip if not configured so it doesn't alarm the user on startup
+        pass
 except ImportError:
-    _email_logger.warning("Cloudinary package not installed. Proof image uploads will not work.")
+    # Silently skip if not installed
+    pass
 
 # Add Render domain to trusted origins dynamically
 if RENDER_ENVIRONMENT:

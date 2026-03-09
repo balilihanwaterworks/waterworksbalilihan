@@ -439,58 +439,58 @@ def account_recovery(request):
             messages.error(request, "Please enter your email or full name.")
 
         if user and user.is_staff:
-                # Generate password reset token
-                existing_token = PasswordResetToken.objects.filter(
+            # Generate password reset token
+            existing_token = PasswordResetToken.objects.filter(
+                user=user,
+                is_used=False,
+                expires_at__gt=timezone.now()
+            ).first()
+
+            if existing_token:
+                token = existing_token
+            else:
+                token = PasswordResetToken.objects.create(
                     user=user,
-                    is_used=False,
-                    expires_at__gt=timezone.now()
-                ).first()
-
-                if existing_token:
-                    token = existing_token
-                else:
-                    token = PasswordResetToken.objects.create(
-                        user=user,
-                        ip_address=get_client_ip(request)
-                    )
-
-                reset_url = request.build_absolute_uri(
-                    reverse('consumers:password_reset_confirm', kwargs={'token': token.token})
+                    ip_address=get_client_ip(request)
                 )
+
+            reset_url = request.build_absolute_uri(
+                reverse('consumers:password_reset_confirm', kwargs={'token': token.token})
+            )
+            
+            # Send email securely instead of returning it!
+            from django.core.mail import EmailMultiAlternatives
+            from django.template.loader import render_to_string
+            
+            try:
+                email_context = {
+                    'username': user.username,
+                    'reset_url': reset_url,
+                    'request_time': token.created_at.strftime('%B %d, %Y at %I:%M %p'),
+                    'expiration_time': token.expires_at.strftime('%B %d, %Y at %I:%M %p'),
+                    'ip_address': get_client_ip(request) or 'Unknown',
+                }
+                html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
+                plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
                 
-                # Send email securely instead of returning it!
-                from django.core.mail import EmailMultiAlternatives
-                from django.template.loader import render_to_string
+                subject = 'Account Recovery & Password Reset - Balilihan Waterworks'
+                from_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
                 
-                try:
-                    email_context = {
-                        'username': user.username,
-                        'reset_url': reset_url,
-                        'request_time': token.created_at.strftime('%B %d, %Y at %I:%M %p'),
-                        'expiration_time': token.expires_at.strftime('%B %d, %Y at %I:%M %p'),
-                        'ip_address': get_client_ip(request) or 'Unknown',
-                    }
-                    html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
-                    plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
-                    
-                    subject = 'Account Recovery & Password Reset - Balilihan Waterworks'
-                    from_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
-                    
-                    msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
-                    msg.attach_alternative(html_message, "text/html")
-                    msg.send(fail_silently=False)
-                    
-                    # Log activity
-                    UserActivity.objects.create(
-                        user=user,
-                        action='password_reset_requested',
-                        description=f'Account recovery email sent for {user.username}',
-                        ip_address=get_client_ip(request)
-                    )
-                except Exception as e:
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Error sending recovery email: {e}")
+                msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
+                msg.attach_alternative(html_message, "text/html")
+                msg.send(fail_silently=False)
+                
+                # Log activity
+                UserActivity.objects.create(
+                    user=user,
+                    action='password_reset_requested',
+                    description=f'Account recovery email sent for {user.username}',
+                    ip_address=get_client_ip(request)
+                )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error sending recovery email: {e}")
 
         # Always show a generic success message to prevent enumeration
         messages.success(request, "If an account was found, a recovery email has been sent with further instructions.")

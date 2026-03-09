@@ -251,22 +251,25 @@ def home(request):
         latest_bill_id=Subquery(latest_bill_subquery)
     ).select_related('barangay').order_by('barangay__name', 'last_name', 'first_name')
 
+    # OPTIMIZATION: Fetch all latest bills in ONE query instead of N+1 loop!
+    latest_bill_ids = [c.latest_bill_id for c in consumers_with_bills if c.latest_bill_id]
+    latest_bills_map = {
+        bill.id: bill for bill in Bill.objects.filter(id__in=latest_bill_ids)
+    }
+
     consumer_bill_status = []
     for consumer in consumers_with_bills:
-        if consumer.latest_bill_id:
-            try:
-                latest_bill = Bill.objects.get(id=consumer.latest_bill_id)
-                consumer_bill_status.append({
-                    'id_number': consumer.id_number,
-                    'consumer_name': consumer.full_name,
-                    'barangay': consumer.barangay.name if consumer.barangay else 'N/A',
-                    'barangay_id': consumer.barangay.id if consumer.barangay else None,
-                    'latest_bill_date': latest_bill.billing_period,
-                    'latest_bill_amount': float(latest_bill.total_amount),
-                    'payment_status': latest_bill.status,
-                })
-            except Bill.DoesNotExist:
-                pass
+        if consumer.latest_bill_id and consumer.latest_bill_id in latest_bills_map:
+            latest_bill = latest_bills_map[consumer.latest_bill_id]
+            consumer_bill_status.append({
+                'id_number': consumer.id_number,
+                'consumer_name': consumer.full_name,
+                'barangay': consumer.barangay.name if consumer.barangay else 'N/A',
+                'barangay_id': consumer.barangay.id if consumer.barangay else None,
+                'latest_bill_date': latest_bill.billing_period,
+                'latest_bill_amount': float(latest_bill.total_amount),
+                'payment_status': latest_bill.status,
+            })
         else:
             consumer_bill_status.append({
                 'id_number': consumer.id_number,

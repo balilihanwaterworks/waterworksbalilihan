@@ -1045,9 +1045,20 @@ def meter_readings(request):
     # Get all barangays for filter
     barangays = Barangay.objects.all().order_by('name')
 
-    # Get all meter readings with related data
+    from django.db.models import OuterRef, Subquery, FloatField
+
+    # Subquery to fetch the most recent confirmed reading prior to the current reading date
+    prev_reading_sq = MeterReading.objects.filter(
+        consumer=OuterRef('consumer'),
+        is_confirmed=True,
+        reading_date__lt=OuterRef('reading_date')
+    ).order_by('-reading_date').values('reading_value')[:1]
+
+    # Get all meter readings with related data AND annotated previous reading
     readings_queryset = MeterReading.objects.select_related(
         'consumer', 'consumer__barangay', 'submitted_by'
+    ).annotate(
+        prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
     ).order_by('-reading_date', '-created_at')
 
     # Apply filters
@@ -1079,20 +1090,21 @@ def meter_readings(request):
     if to_date:
         readings_queryset = readings_queryset.filter(reading_date__lte=to_date)
 
-    # Prepare readings with consumption data
+    # Prepare readings with consumption data efficiently without N+1 queries
     readings_with_data = []
-    for reading in readings_queryset[:500]:  # Limit to recent 500 for performance
-        prev_reading = MeterReading.objects.filter(
-            consumer=reading.consumer,
-            is_confirmed=True,
-            reading_date__lt=reading.reading_date
-        ).order_by('-reading_date').first()
+    
+    class MockPrevReading:
+        def __init__(self, val):
+            self.reading_value = val
 
-        if prev_reading:
-            consumption = reading.reading_value - prev_reading.reading_value
-        else:
+    for reading in readings_queryset[:500]:  # Limit to recent 500 for performance
+        if reading.prev_reading_value is None:
             baseline = reading.consumer.first_reading or 0
+            prev_reading = MockPrevReading(baseline)
             consumption = reading.reading_value - baseline if reading.reading_value >= baseline else 0
+        else:
+            prev_reading = MockPrevReading(reading.prev_reading_value)
+            consumption = reading.reading_value - reading.prev_reading_value
 
         readings_with_data.append({
             'reading': reading,
@@ -1101,24 +1113,20 @@ def meter_readings(request):
             'display_id': reading.consumer.id_number
         })
 
-    # Get pending readings for Pending tab
+    # Get pending readings for Pending tab, annotated with previous reading
     pending_readings = MeterReading.objects.filter(
         is_confirmed=False,
         is_rejected=False,
         source='app_manual'  # Manual entry from Smart Meter Reader app
-    ).select_related('consumer', 'consumer__barangay', 'submitted_by').order_by('-reading_date')
+    ).select_related('consumer', 'consumer__barangay', 'submitted_by').annotate(
+        prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
+    ).order_by('-reading_date')
 
-    # Add previous reading info to each pending reading
+    # Calculate consumption directly from annotation
     for reading in pending_readings:
-        prev = MeterReading.objects.filter(
-            consumer=reading.consumer,
-            is_confirmed=True,
-            reading_date__lt=reading.reading_date
-        ).order_by('-reading_date').first()
-
-        if prev:
-            reading.previous_reading = prev.reading_value
-            reading.consumption = reading.reading_value - prev.reading_value
+        if reading.prev_reading_value is not None:
+            reading.previous_reading = reading.prev_reading_value
+            reading.consumption = reading.reading_value - reading.prev_reading_value
         else:
             baseline = reading.consumer.first_reading or 0
             reading.previous_reading = baseline
@@ -1171,12 +1179,23 @@ def pending_readings_view(request):
     selected_barangay_id = request.GET.get('barangay', '')
     search_query = request.GET.get('search', '').strip()
 
-    # Get pending readings (not confirmed, not rejected, submitted with proof)
+    from django.db.models import OuterRef, Subquery, FloatField
+
+    # Subquery to fetch the most recent confirmed reading
+    prev_reading_sq = MeterReading.objects.filter(
+        consumer=OuterRef('consumer'),
+        is_confirmed=True,
+        reading_date__lt=OuterRef('reading_date')
+    ).order_by('-reading_date').values('reading_value')[:1]
+
+    # Get pending readings using annotations to prevent N+1 queries
     pending_readings = MeterReading.objects.filter(
         is_confirmed=False,
         is_rejected=False,
         source='app_manual'  # Manual entry from Smart Meter Reader app
-    ).select_related('consumer', 'consumer__barangay', 'submitted_by').order_by('-reading_date')
+    ).select_related('consumer', 'consumer__barangay', 'submitted_by').annotate(
+        prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
+    ).order_by('-reading_date')
 
     # Apply barangay filter
     if selected_barangay_id:
@@ -1190,17 +1209,11 @@ def pending_readings_view(request):
             Q(consumer__id_number__icontains=search_query)
         )
 
-    # Add previous reading info to each
+    # Calculate consumption efficiently
     for reading in pending_readings:
-        prev = MeterReading.objects.filter(
-            consumer=reading.consumer,
-            is_confirmed=True,
-            reading_date__lt=reading.reading_date
-        ).order_by('-reading_date').first()
-
-        if prev:
-            reading.previous_reading = prev.reading_value
-            reading.consumption = reading.reading_value - prev.reading_value
+        if reading.prev_reading_value is not None:
+            reading.previous_reading = reading.prev_reading_value
+            reading.consumption = reading.reading_value - reading.prev_reading_value
         else:
             baseline = reading.consumer.first_reading or 0
             reading.previous_reading = baseline

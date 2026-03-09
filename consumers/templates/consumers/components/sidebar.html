@@ -1,0 +1,138 @@
+<!-- Sidebar Component -->
+<div class="sidebar bg-white text-dark-900 fixed left-0 bottom-0 flex flex-col py-2 px-2 border-r border-light-300" id="sidebar">
+    <nav class="flex-grow overflow-y-auto scrollbar-thin">
+        <!-- Main Section: Superadmin & Admin -->
+        {% if user.is_superuser or user.staffprofile.role == 'superadmin' or user.staffprofile.role == 'admin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Main</div>
+            <a href="{% url 'consumers:home' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-house-door-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Consumer Operations: Superadmin only (Consumers link) -->
+        {% if user.is_superuser or user.staffprofile.role == 'superadmin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Consumer Ops</div>
+
+            <a href="{% url 'consumers:consumer_management' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-people-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Consumers</span>
+            </a>
+
+            <a href="{% url 'consumers:inquire' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-search me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Inquire Bill</span>
+            </a>
+
+            <a href="{% url 'consumers:meter_reading_overview' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-speedometer2 me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Meter Readings</span>
+            </a>
+
+            <a href="{% url 'consumers:pending_readings' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-camera-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Pending Readings</span>
+                {% if pending_proof_readings_count %}
+                <span class="ml-auto bg-warning-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ pending_proof_readings_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Admin Section: Inquire Bill, Meter Readings, Pending Readings only -->
+        {% if user.staffprofile.role == 'admin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Operations</div>
+
+            <a href="{% url 'consumers:inquire' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-search me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Inquire Bill</span>
+            </a>
+
+            <a href="{% url 'consumers:meter_reading_overview' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-speedometer2 me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Meter Readings</span>
+            </a>
+
+            <a href="{% url 'consumers:pending_readings' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-camera-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Pending Readings</span>
+                {% if pending_proof_readings_count %}
+                <span class="ml-auto bg-warning-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ pending_proof_readings_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Note: Field Staff can only access via Smart Meter Reader mobile app -->
+
+        <!-- Reports: Superadmin & Admin -->
+        {% if user.is_superuser or user.staffprofile.role == 'superadmin' or user.staffprofile.role == 'admin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Reports</div>
+            <a href="{% url 'consumers:reports' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-file-earmark-text-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Reports</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Payment Section: Cashier only -->
+        {% if user.staffprofile.role == 'cashier' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Payment</div>
+            <a href="{% url 'consumers:process_payment' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-cash-coin me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Process Payment</span>
+            </a>
+            <a href="{% url 'consumers:payment_history' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-receipt me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Transaction History</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- System Settings (Superadmin Only) -->
+        {% if user.is_superuser or user.staffprofile.role == 'superadmin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">System</div>
+            <a href="{% url 'consumers:system_settings_verification' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-gear-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">System Settings</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Administration (Superadmin Only) -->
+        {% if user.is_superuser or user.staffprofile.role == 'superadmin' %}
+        <div class="nav-section mb-2">
+            <div class="text-dark-500 uppercase font-semibold mb-1.5 text-xxs tracking-wider px-2" style="font-size: 0.65rem;">Administration</div>
+            <a href="{% url 'consumers:admin_verification' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-shield-lock-fill me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">User Management</span>
+            </a>
+            <a href="{% url 'consumers:user_login_history' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-clock-history me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Login History</span>
+            </a>
+        </div>
+        {% endif %}
+    </nav>
+</div>

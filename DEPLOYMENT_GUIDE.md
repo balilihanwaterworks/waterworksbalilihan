@@ -3,7 +3,7 @@
 
 This guide provides detailed steps to setup and deploy the Balilihan Waterworks Management System, developed using Python programming language, Django framework, and PostgreSQL database.
 
-**Live Production System**: https://waterworks-sos3.onrender.com
+**Live Production System**: https://waterworksbalilihan.onrender.com
 
 ---
 
@@ -68,7 +68,7 @@ It is best practice to run Django projects inside a virtual environment to isola
 
 1. Download the source code (ZIP file) or clone it from the repository:
    ```
-   git clone https://github.com/JeSender/waterworks.git
+   git clone https://github.com/balilihanwaterworks/waterworksbalilihan.git
    ```
 
 2. Extract the folder to your desired location (e.g., C:\Users\YourName\Documents\waterworks).
@@ -308,16 +308,16 @@ DEFAULT_FROM_EMAIL=Balilihan Waterworks <noreply@balilihan-waterworks.com>
 
 ## 10. Production Deployment (Render)
 
-The system is deployed on Render at: https://waterworks-sos3.onrender.com
+The system is deployed on Render at: https://waterworksbalilihan.onrender.com
 
 ### 10.1 Prepare for Deployment
 
 1. Update `.env` file:
    ```
    DEBUG=False
-   ALLOWED_HOSTS=waterworks-sos3.onrender.com
-   CORS_ALLOWED_ORIGINS=https://waterworks-sos3.onrender.com
-   CSRF_TRUSTED_ORIGINS=https://waterworks-sos3.onrender.com
+   ALLOWED_HOSTS=waterworksbalilihan.onrender.com
+   CORS_ALLOWED_ORIGINS=https://waterworksbalilihan.onrender.com
+   CSRF_TRUSTED_ORIGINS=https://waterworksbalilihan.onrender.com
    ```
 
 2. Collect static files:
@@ -331,7 +331,7 @@ The system is deployed on Render at: https://waterworks-sos3.onrender.com
 
 2. Create a new **Web Service**
 
-3. Connect your GitHub repository: https://github.com/JeSender/waterworks
+3. Connect your GitHub repository: https://github.com/balilihanwaterworks/waterworksbalilihan
 
 4. Configure build settings:
    - **Build Command**: `pip install -r requirements.txt`
@@ -373,9 +373,9 @@ The Balilihan Waterworks Management System includes:
 
 For further assistance, technical support, or bug reports, please contact the development team:
 
-**Email**: jestonie.endres@bisu.edu.ph
+**Email**: balilihanwaterworks6342@gmail.com
 
-**GitHub Repository**: https://github.com/JeSender/waterworks
+**GitHub Repository**: https://github.com/balilihanwaterworks/waterworksbalilihan
 
 For framework-specific documentation, consult the Django official guide at:
 https://docs.djangoproject.com/en/5.2/

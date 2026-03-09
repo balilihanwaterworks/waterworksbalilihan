@@ -123,7 +123,7 @@ git status
 Should say: **"Your branch is up to date with 'origin/main'"**
 
 Or check online:
-- Visit: https://github.com/JeSender/waterworks/commits/main
+- Visit: https://github.com/balilihanwaterworks/waterworksbalilihan/commits/main
 - Your commit should appear at the top
 
 ---
@@ -163,7 +163,7 @@ If you have SSH keys set up:
 
 ```bash
 # Change remote to SSH
-git remote set-url origin git@github.com:JeSender/waterworks.git
+git remote set-url origin git@github.com:balilihanwaterworks/waterworksbalilihan.git
 
 # Push
 git push origin main

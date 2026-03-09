@@ -3,7 +3,7 @@
 
 This guide provides detailed steps to setup, deploy, and maintain the Balilihan Waterworks Management System, developed using Python programming language, Django framework, and PostgreSQL database.
 
-**Live Production System**: [https://waterworks-sos3.onrender.com](https://waterworks-sos3.onrender.com)
+**Live Production System**: [https://waterworksbalilihan.onrender.com](https://waterworksbalilihan.onrender.com)
 
 ---
 
@@ -72,7 +72,7 @@ It is best practice to run Django projects inside a virtual environment to isola
 
 1. Download the source code (ZIP file) or clone it from the repository:
    ```bash
-   git clone https://github.com/JeSender/waterworks.git
+   git clone https://github.com/balilihanwaterworks/waterworksbalilihan.git
    ```
 
 2. Extract the folder to your desired location (e.g., `C:\Users\YourName\Documents\waterworks`).
@@ -149,8 +149,8 @@ It is best practice to run Django projects inside a virtual environment to isola
 
    For production deployment:
    ```
-   CORS_ALLOWED_ORIGINS=https://waterworks-sos3.onrender.com
-   CSRF_TRUSTED_ORIGINS=https://waterworks-sos3.onrender.com
+   CORS_ALLOWED_ORIGINS=https://waterworksbalilihan.onrender.com
+   CSRF_TRUSTED_ORIGINS=https://waterworksbalilihan.onrender.com
    ```
 
    **Cloudinary (Optional - for cloud image storage):**
@@ -475,9 +475,9 @@ For deploying to a production environment on Render:
 1. Update `.env` file:
    ```env
    DEBUG=False
-   ALLOWED_HOSTS=waterworks-sos3.onrender.com
-   CORS_ALLOWED_ORIGINS=https://waterworks-sos3.onrender.com
-   CSRF_TRUSTED_ORIGINS=https://waterworks-sos3.onrender.com
+   ALLOWED_HOSTS=waterworksbalilihan.onrender.com
+   CORS_ALLOWED_ORIGINS=https://waterworksbalilihan.onrender.com
+   CSRF_TRUSTED_ORIGINS=https://waterworksbalilihan.onrender.com
    ```
 
 2. Collect static files:
@@ -554,8 +554,8 @@ python manage.py dumpdata > backup_$(date +%Y%m%d).json
 
 For further assistance, technical support, or bug reports, please contact:
 
-**Email**: jestonie.endres@bisu.edu.ph
-**GitHub Repository**: [https://github.com/JeSender/waterworks](https://github.com/JeSender/waterworks)
+**Email**: balilihanwaterworks6342@gmail.com
+**GitHub Repository**: [https://github.com/balilihanwaterworks/waterworksbalilihan](https://github.com/balilihanwaterworks/waterworksbalilihan)
 
 **Framework Documentation:**
 - Django Official Guide: [https://docs.djangoproject.com/en/5.2/](https://docs.djangoproject.com/en/5.2/)

@@ -59,7 +59,7 @@ A comprehensive water utility management system with web portal, mobile app inte
 
 1. **Clone Repository**
    ```bash
-   git clone https://github.com/JeSender/waterworks.git
+   git clone https://github.com/balilihanwaterworks/waterworksbalilihan.git
    cd waterworks
    ```
 

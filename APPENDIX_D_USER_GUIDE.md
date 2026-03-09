@@ -3,7 +3,7 @@
 
 This guide provides detailed steps to setup and deploy the Balilihan Waterworks Management System, developed using Python programming language, Django framework, and PostgreSQL database.
 
-**Live Production System**: https://waterworks-sos3.onrender.com
+**Live Production System**: https://waterworksbalilihan.onrender.com
 
 ---
 
@@ -246,14 +246,14 @@ Since this is a fresh database, you must recreate the tables.
 
 For further assistance, technical support, or bug reports, please contact the development team:
 
-**Email**: jestonie.endres@bisu.edu.ph
+**Email**: balilihanwaterworks6342@gmail.com
 
 For framework-specific documentation, consult the Django official guide at:
 https://docs.djangoproject.com/en/5.2/
 
 ---
 
-**Project Repository**: https://github.com/JeSender/waterworks
-**Live System**: https://waterworks-sos3.onrender.com
+**Project Repository**: https://github.com/balilihanwaterworks/waterworksbalilihan
+**Live System**: https://waterworksbalilihan.onrender.com
 **Document Version**: 1.0
 **Last Updated**: January 19, 2026

@@ -1336,7 +1336,7 @@ scp backup_*.sql user@backup-server:/backups/
 
 ## Contact & Support
 
-**Project Repository**: https://github.com/JeSender/waterworks
+**Project Repository**: https://github.com/balilihanwaterworks/waterworksbalilihan
 **Production URL**: https://web-production-9445b.up.railway.app/
 **Deployment Platform**: Railway.app
 

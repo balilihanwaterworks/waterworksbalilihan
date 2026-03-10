@@ -21,6 +21,7 @@ urlpatterns = [
 
     # Dashboard
     path('home/', views.home, name='home'),
+    path('home/stats/', views.dashboard_stats_partial, name='dashboard_stats_partial'),
 
     # Consumer Management
     path('consumer-management/', views.consumer_management, name='consumer_management'),

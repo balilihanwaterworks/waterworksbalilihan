@@ -1,0 +1,78 @@
+{% load humanize %}
+
+<div id="dashboard-stats-container"
+     class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-3"
+     hx-get="{% url 'consumers:dashboard_stats_partial' %}"
+     hx-trigger="every 60s"
+     hx-swap="outerHTML">
+    <!-- Connected -->
+    <a href="{% url 'consumers:connected_consumers' %}" class="group block">
+        <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-check-circle-fill text-success-600 text-sm"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-dark-500 font-medium">Connected</div>
+                    <div class="text-lg font-bold text-dark-900">{{ connected_count|default:"0" }}</div>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <!-- Disconnected -->
+    <a href="{% url 'consumers:disconnected_consumers' %}" class="group block">
+        <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-danger-100 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-x-circle-fill text-danger-600 text-sm"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-dark-500 font-medium">Disconnected</div>
+                    <div class="text-lg font-bold text-dark-900">{{ disconnected_count|default:"0" }}</div>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <!-- Delinquent -->
+    <a href="{% url 'consumers:delinquent_consumers' %}" class="group block">
+        <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-exclamation-triangle-fill text-warning-600 text-sm"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-dark-500 font-medium">Delinquent</div>
+                    <div class="text-lg font-bold text-dark-900">{{ delinquent_count|default:"0" }}</div>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <!-- Monthly Revenue -->
+    <div class="bg-gradient-to-br from-success-500 to-success-600 rounded-lg p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <i class="bi bi-graph-up-arrow text-white text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xs text-success-100 font-medium">Monthly Revenue</div>
+                <div class="text-sm font-bold text-white">₱{{ monthly_revenue|floatformat:0|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annual Revenue -->
+    <div class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <i class="bi bi-calendar-check text-white text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xs text-primary-100 font-medium">Annual Revenue</div>
+                <div class="text-sm font-bold text-white">₱{{ annual_revenue|floatformat:0|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+</div>

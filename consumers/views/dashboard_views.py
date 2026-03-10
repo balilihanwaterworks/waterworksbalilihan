@@ -338,3 +338,37 @@ def home(request):
         'consumer_bill_status': json.dumps(consumer_bill_status, default=str),
     }
     return render(request, 'consumers/home.html', context)
+
+
+@login_required
+def dashboard_stats_partial(request):
+    """HTMX endpoint to return only the top 5 stat cards for real-time polling"""
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    today = datetime.now().date()
+
+    connected_count = Consumer.objects.filter(status='active').count()
+    disconnected_count = Consumer.objects.filter(status='disconnected').count()
+
+    delinquent_count = Consumer.objects.filter(
+        bills__status='Pending',
+        bills__billing_period__lt=today
+    ).distinct().count()
+
+    monthly_revenue = Payment.objects.filter(
+        payment_date__month=current_month,
+        payment_date__year=current_year
+    ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+    annual_revenue = Payment.objects.filter(
+        payment_date__year=current_year
+    ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+    context = {
+        'connected_count': connected_count,
+        'disconnected_count': disconnected_count,
+        'delinquent_count': delinquent_count,
+        'monthly_revenue': monthly_revenue,
+        'annual_revenue': annual_revenue,
+    }
+    return render(request, 'consumers/partials/_dashboard_stats.html', context)

@@ -57,7 +57,7 @@
             <div class="flex items-center justify-between mt-2.5">
                 <p class="text-white/70 text-xs">
                     <span id="visible-count" class="font-bold text-white text-sm">{{ consumers|length }}</span>
-                    consumer{% if consumers|length != 1 %}s{% endif %} with pending bills
+                    consumer{% if consumers|length != 1 %}s{% endif %} ready for payment
                 </p>
                 {% if selected_barangay %}
                 <button onclick="clearBarangay()" class="text-white/60 hover:text-white text-xs flex items-center gap-1 transition-colors">
@@ -134,14 +134,13 @@
                 <p class="text-xs text-dark-400 mt-1">Try a different name or ID number</p>
             </div>
 
-            {% else %}
-            {# All clear state #}
+            {# No consumers queued state #}
             <div class="text-center py-14 px-4">
-                <div class="w-14 h-14 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="bi bi-check-circle-fill text-2xl text-success-500"></i>
+                <div class="w-14 h-14 bg-warning-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-clock-history text-2xl text-warning-500"></i>
                 </div>
-                <p class="text-sm font-bold text-dark-600">No Pending Bills</p>
-                <p class="text-xs text-dark-400 mt-1.5">All consumers are up to date</p>
+                <p class="text-sm font-bold text-dark-600">No Consumers Queued</p>
+                <p class="text-xs text-dark-400 mt-1.5">No consumers have been inquired yet. Bills must be printed at the <strong>Inquire Office</strong> first.</p>
             </div>
             {% endif %}
         </div>

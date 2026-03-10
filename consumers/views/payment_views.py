@@ -348,15 +348,27 @@ def process_payment(request):
         return redirect('consumers:payment_receipt', payment_id=last_payment.id)
 
     # ---------- GET: show consumer list or bill+payment form ----------
-    consumers = Consumer.objects.filter(status='active').select_related('barangay', 'purok').order_by('last_name', 'first_name')
+    # Only show consumers who have been through the Inquire office
+    # (i.e., have at least one bill marked queued_for_payment=True)
+    queued_consumer_ids = set(
+        Bill.objects.filter(
+            status='Pending',
+            queued_for_payment=True
+        ).values_list('consumer_id', flat=True)
+    )
+
+    consumers = Consumer.objects.filter(
+        status='active',
+        id__in=queued_consumer_ids
+    ).select_related('barangay', 'purok').order_by('last_name', 'first_name')
 
     if selected_barangay:
         consumers = consumers.filter(barangay_id=selected_barangay)
 
-    # Build consumer → pending bill map
+    # Build consumer → pending bill map (only queued bills)
     consumer_bills = {}
     for c in consumers:
-        bill = c.bills.filter(status='Pending').order_by('-billing_period').first()
+        bill = c.bills.filter(status='Pending', queued_for_payment=True).order_by('-billing_period').first()
         if bill:
             update_bill_penalty(bill, system_settings, save=True)
             consumer_bills[c.id] = bill

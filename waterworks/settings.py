@@ -28,6 +28,10 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost,192.168.100
 if RENDER_ENVIRONMENT or '.onrender.com' not in str(ALLOWED_HOSTS):
     ALLOWED_HOSTS.append('.onrender.com')
 
+# CSRF configuration for Render (HTTPS proxy)
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://waterworksbalilihan.onrender.com', cast=Csv())
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

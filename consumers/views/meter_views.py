@@ -472,7 +472,7 @@ def confirm_all_readings(request, barangay_id):
     readings_to_confirm = MeterReading.objects.filter(
         consumer__barangay=barangay,
         is_confirmed=False
-    ).select_related('consumer')
+    ).exclude(source='app_manual').select_related('consumer')
 
     success_count = 0
     for reading in readings_to_confirm:
@@ -569,10 +569,10 @@ def confirm_all_readings_global(request):
     if request.method != "POST":
         return redirect('consumers:meter_readings')
 
-    # Get all unconfirmed readings
+    # Get all unconfirmed readings, excluding ones that require photo verification
     readings_to_confirm = MeterReading.objects.filter(
         is_confirmed=False
-    ).select_related('consumer')
+    ).exclude(source='app_manual').select_related('consumer')
 
     success_count = 0
     error_count = 0

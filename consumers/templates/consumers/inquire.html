@@ -2,338 +2,375 @@
 {% load dict_extras %}
 {% load static humanize %}
 
-{% block title %}Payment - Balilihan Waterworks{% endblock %}
+{% block title %}Inquire Bill - Balilihan Waterworks{% endblock %}
 
 {% block main_content %}
-<div class="max-w-7xl mx-auto">
+{# ================================================================ #}
+{# TWO-PANEL LAYOUT: Left = Consumer List | Right = Bill Statement  #}
+{# ================================================================ #}
+<div class="flex h-[calc(100vh-4rem)] overflow-hidden rounded-2xl shadow-sm border border-light-200 bg-white">
 
-    {% if not selected_consumer %}
-    <!-- ============ CONSUMER SELECTION VIEW ============ -->
-    <div class="bg-white rounded-2xl shadow-sm border border-light-200 overflow-hidden">
+    {# ── LEFT PANEL ── Consumer List #}
+    <div class="w-72 flex-shrink-0 flex flex-col border-r border-light-200 bg-white">
 
-        <!-- Top Bar: Filter & Search -->
-        <div class="px-4 sm:px-5 pt-4 sm:pt-5 pb-4 border-b border-light-200 bg-gradient-to-r from-primary-600 to-primary-700">
-            <!-- Barangay Filter & Search Row -->
-            <div class="flex flex-col sm:flex-row gap-3 mb-3">
-                <!-- Barangay Filter -->
-                <div class="sm:w-56">
-                    <select id="filter-barangay"
-                            onchange="applyFilters()"
-                            class="w-full px-3 py-2.5 text-sm bg-white/95 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/50 text-dark-700 cursor-pointer shadow-sm">
-                        <option value="">All Barangays</option>
-                        {% for barangay in barangays %}
-                        <option value="{{ barangay.id }}" {% if selected_barangay == barangay.id|stringformat:"d" %}selected{% endif %}>
-                            {{ barangay.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Search Bar -->
-                <div class="flex-1 relative">
-                    <i class="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-400 text-sm"></i>
-                    <input type="text"
-                           id="search-consumer"
-                           placeholder="Search by name or ID number..."
-                           class="w-full pl-10 pr-4 py-2.5 text-sm bg-white/95 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-dark-400 shadow-sm"
-                           autofocus>
-                </div>
+        {# Header / Search / Filter #}
+        <div class="px-4 pt-4 pb-3 bg-gradient-to-b from-primary-600 to-primary-700 flex-shrink-0">
+            <h2 class="text-white font-bold text-sm mb-2.5 flex items-center gap-2">
+                <i class="bi bi-search text-white/80"></i> Inquire Office
+            </h2>
+
+            {# Barangay Filter #}
+            <select id="filter-barangay" onchange="applyBarangayFilter()"
+                    class="w-full px-3 py-2 text-xs bg-white/95 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-dark-700 cursor-pointer shadow-sm mb-2">
+                <option value="">All Barangays</option>
+                {% for barangay in barangays %}
+                <option value="{{ barangay.id }}" {% if selected_barangay == barangay.id|stringformat:"d" %}selected{% endif %}>
+                    {{ barangay.name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            {# Search #}
+            <div class="relative">
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-xs"></i>
+                <input type="text"
+                       id="search-consumer"
+                       placeholder="Search name or ID…"
+                       autofocus
+                       class="w-full pl-8 pr-3 py-2 text-xs bg-white/95 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-dark-400 shadow-sm">
             </div>
 
-            <!-- Result Count -->
-            <div class="flex items-center justify-between">
-                <p class="text-sm text-white/80">
-                    <span id="visible-count" class="font-bold text-white">{{ consumers|length }}</span> pending consumers
+            {# Count badge #}
+            <div class="flex items-center justify-between mt-2.5">
+                <p class="text-white/70 text-xs">
+                    <span id="visible-count" class="font-bold text-white text-sm">{{ consumers|length }}</span>
+                    consumer{% if consumers|length != 1 %}s{% endif %} with pending bills
                 </p>
                 {% if selected_barangay %}
-                <button onclick="clearFilters()" class="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1">
-                    <i class="bi bi-x-circle"></i> Clear filter
+                <button onclick="clearBarangay()" class="text-white/60 hover:text-white text-xs flex items-center gap-1 transition-colors">
+                    <i class="bi bi-x-circle-fill text-[10px]"></i> Clear
                 </button>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Consumer List -->
-        <div class="max-h-[520px] overflow-y-auto">
+        {# Scrollable Consumer List #}
+        <div class="flex-1 overflow-y-auto" id="consumer-list-container">
             {% if consumers %}
             <div id="consumer-list">
                 {% for consumer in consumers %}
-                <a href="?consumer={{ consumer.id }}"
-                   class="consumer-card flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-light-100 hover:bg-primary-50 transition-colors duration-150 cursor-pointer"
+                {% with bill=consumer_bills|get_item:consumer.id %}
+                <a href="?consumer={{ consumer.id }}{% if selected_barangay %}&barangay={{ selected_barangay }}{% endif %}"
+                   class="consumer-card flex items-center justify-between px-4 py-3.5 border-b border-light-100
+                          hover:bg-primary-50 transition-all duration-150 group
+                          {% if selected_consumer and selected_consumer.id == consumer.id %}
+                              bg-primary-50 border-l-[3px] border-l-primary-500
+                          {% else %}
+                              border-l-[3px] border-l-transparent
+                          {% endif %}"
                    data-name="{{ consumer.first_name|lower }} {{ consumer.last_name|lower }}"
-                   data-id="{{ consumer.account_number|lower }}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="bi bi-person-fill text-primary-600 text-sm"></i>
+                   data-id="{{ consumer.id_number|lower }}">
+
+                    {# Avatar + Info #}
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
+                                    {% if selected_consumer and selected_consumer.id == consumer.id %}
+                                        bg-primary-500 text-white
+                                    {% else %}
+                                        bg-primary-100 text-primary-600 group-hover:bg-primary-200
+                                    {% endif %}
+                                    transition-colors">
+                            <i class="bi bi-person-fill text-sm"></i>
                         </div>
                         <div class="min-w-0">
-                            <h6 class="text-sm font-semibold text-dark-900 truncate">
+                            <p class="text-sm font-semibold text-dark-900 truncate leading-snug">
                                 {{ consumer.last_name }}, {{ consumer.first_name }}
-                            </h6>
-                            <div class="flex items-center gap-1.5 text-xs text-dark-500 mt-0.5">
-                                <span class="font-mono font-medium text-primary-600">{{ consumer.account_number }}</span>
-                                <span class="text-dark-300">&#8226;</span>
-                                <span class="truncate">{{ consumer.barangay.name|default:"—" }}</span>
+                                {% if consumer.suffix %}<span class="font-normal text-dark-500 text-xs">&nbsp;{{ consumer.suffix }}</span>{% endif %}
+                            </p>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="font-mono text-xs font-bold text-primary-700">{{ consumer.id_number }}</span>
+                                {% if consumer.barangay %}
+                                <span class="text-dark-300 text-xs">•</span>
+                                <span class="text-xs text-dark-500 truncate max-w-[90px]">{{ consumer.barangay.name }}</span>
+                                {% endif %}
                             </div>
+                            {% if consumer.is_delinquent %}
+                            <span class="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 bg-danger-100 text-danger-700 text-[10px] font-bold rounded">
+                                <i class="bi bi-exclamation-triangle-fill text-[9px]"></i> Delinquent
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 flex-shrink-0 ml-3">
-                        {% if consumer.is_delinquent %}
-                        <span class="px-2 py-0.5 bg-danger-100 text-danger-700 text-xs font-bold rounded flex items-center gap-1">
-                            <i class="bi bi-exclamation-triangle-fill text-[10px]"></i>
-                            Delinquent
-                        </span>
-                        {% endif %}
-                        {% with bill=consumer_bills|get_item:consumer.id %}
-                        {% if bill %}
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-warning-700">₱{{ bill.total_amount|floatformat:2|intcomma }}</div>
-                            <span class="text-[10px] uppercase tracking-wider font-semibold text-warning-600">Pending</span>
-                        </div>
-                        {% else %}
-                        <span class="px-2 py-0.5 bg-light-100 text-dark-400 text-xs font-medium rounded">
-                            No Bills
-                        </span>
-                        {% endif %}
-                        {% endwith %}
-                        <i class="bi bi-chevron-right text-dark-300 text-xs"></i>
+
+                    {# Due Amount #}
+                    {% if bill %}
+                    <div class="text-right flex-shrink-0 ml-2">
+                        <div class="text-xs font-bold text-warning-700">₱{{ bill.total_amount_due|floatformat:2|intcomma }}</div>
+                        <div class="text-[10px] font-semibold text-warning-500 uppercase tracking-wide">Due</div>
                     </div>
+                    {% endif %}
                 </a>
+                {% endwith %}
                 {% endfor %}
             </div>
 
-            <!-- No Search Results -->
-            <div id="no-results" class="hidden text-center py-16 px-4">
-                <i class="bi bi-search text-5xl text-light-300 mb-3 block"></i>
-                <h5 class="text-base font-bold text-dark-600 mb-1">No Results Found</h5>
-                <p class="text-sm text-dark-400">Try a different search term</p>
+            {# No search results #}
+            <div id="no-results" class="hidden text-center py-14 px-4">
+                <i class="bi bi-search text-4xl text-light-300 mb-3 block"></i>
+                <p class="text-sm font-semibold text-dark-500">No results found</p>
+                <p class="text-xs text-dark-400 mt-1">Try a different name or ID number</p>
             </div>
+
             {% else %}
-            <!-- Empty State -->
-            <div class="text-center py-16 px-4">
+            {# All clear state #}
+            <div class="text-center py-14 px-4">
                 <div class="w-14 h-14 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="bi bi-check-circle-fill text-2xl text-success-500"></i>
                 </div>
-                <h5 class="text-base font-bold text-dark-600 mb-1">No Pending Bills</h5>
-                <p class="text-sm text-dark-400 mb-5">All consumers are up to date with their payments</p>
-                {% if selected_barangay %}
-                <button onclick="clearFilters()" class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                    <i class="bi bi-arrow-clockwise mr-2"></i>View All Barangays
-                </button>
-                {% endif %}
+                <p class="text-sm font-bold text-dark-600">No Pending Bills</p>
+                <p class="text-xs text-dark-400 mt-1.5">All consumers are up to date</p>
             </div>
             {% endif %}
         </div>
     </div>
 
-    {% else %}
-    <!-- ============ WATER BILL VIEW ============ -->
-    <div class="max-w-lg mx-auto">
-        <!-- Back Button -->
-        <a href="{% url 'consumers:inquire' %}" class="inline-flex items-center px-3 py-1.5 mb-3 bg-light-100 hover:bg-light-200 text-dark-700 text-xs font-medium rounded-lg transition-colors">
-            <i class="bi bi-arrow-left mr-1.5"></i>Back to List
-        </a>
+    {# ── RIGHT PANEL ── Bill Statement #}
+    <div class="flex-1 overflow-y-auto bg-light-50 px-5 py-5">
 
-        <!-- Water Bill Card -->
-        <div class="bg-white rounded-xl border-2 border-dark-300 shadow-md overflow-hidden">
-
-            <!-- Header -->
-            <div class="px-5 py-4 border-b-2 border-dark-300 text-center">
-                <div class="flex items-center justify-center gap-3 mb-1">
-                    <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-10 h-10 object-contain">
-                    <div>
-                        <h2 class="text-base font-bold text-dark-900 uppercase tracking-wide">Balilihan Waterworks System</h2>
-                        <p class="text-xs text-dark-500 uppercase">LGU - Balilihan</p>
-                        <p class="text-[10px]" style="color:#555;">Balilihan, 6342, Bohol</p>
-                    </div>
-                    <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-10 h-10 object-contain">
+        {% if not selected_consumer %}
+        {# Prompt state #}
+        <div class="h-full flex items-center justify-center">
+            <div class="text-center max-w-xs">
+                <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <i class="bi bi-file-earmark-text text-3xl text-primary-500"></i>
                 </div>
+                <h3 class="text-base font-bold text-dark-700 mb-2">Select a Consumer</h3>
+                <p class="text-sm text-dark-400">Choose a consumer from the list on the left to view and print their water bill statement.</p>
             </div>
+        </div>
 
-            <!-- Title & Date -->
-            <div class="px-5 py-3 border-b border-dark-200 flex items-center justify-between">
-                <h3 class="text-sm font-bold text-dark-900 uppercase">Water Bill</h3>
-                <p class="text-xs text-dark-600">
-                    Date: <span class="font-semibold">{% now "n-d-Y" %}</span>
-                </p>
-            </div>
+        {% else %}
+        {# Bill Statement Card #}
+        <div class="max-w-xl mx-auto">
 
-            <!-- Consumer Info -->
-            <div class="px-5 py-3 border-b border-dark-200 space-y-1.5">
-                <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Name:</span>
-                    <span class="text-sm font-bold text-dark-900">{{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}{% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}</span>
+            {# Breadcrumb / Consumer name header #}
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-dark-900">
+                        {{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}
+                        {% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}
+                    </h3>
+                    <p class="text-xs text-dark-500 font-mono">{{ selected_consumer.id_number }} &nbsp;·&nbsp; {{ selected_consumer.barangay.name|default:"—" }}</p>
                 </div>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Barangay:</span>
-                    <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</span>
-                </div>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">ID Number:</span>
-                    <span class="text-sm font-mono font-semibold text-primary-700">{{ selected_consumer.id_number|default:"—" }}</span>
-                </div>
-            </div>
-
-            <!-- Billing Table -->
-            <div class="px-5 py-3">
-                <p class="text-xs font-bold text-dark-700 uppercase mb-2">For the Month</p>
-
                 {% if pending_bills %}
-                <table class="w-full border-collapse text-xs" id="bill-table">
-                    <thead>
-                        <tr class="bg-dark-100">
-                            <th class="border border-dark-300 px-1.5 py-1.5 text-center font-bold text-dark-700 w-8">
-                                <input type="checkbox" id="select-all-bills" title="Select/Deselect all" checked class="w-3.5 h-3.5 rounded cursor-pointer accent-primary-600">
-                            </th>
-                            <th class="border border-dark-300 px-2 py-1.5 text-left font-bold text-dark-700">Month/Year</th>
-                            <th class="border border-dark-300 px-2 py-1.5 text-center font-bold text-dark-700">Consumed<br>(Cu.m.)</th>
-                            <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Amount</th>
-                             <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
-                            <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Penalty</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for bill in pending_bills %}
-                        <tr class="bill-row {% if bill.is_overdue %}bg-danger-50{% endif %}" data-index="{{ forloop.counter0 }}">
-                            <td class="border border-dark-300 px-1.5 py-1.5 text-center">
-                                <input type="checkbox"
-                                       class="bill-checkbox w-3.5 h-3.5 rounded cursor-pointer accent-primary-600"
-                                       checked
-                                       data-index="{{ forloop.counter0 }}"
-                                       data-bill-id="{{ bill.id }}"
-                                       data-amount="{{ bill.total_amount }}"
-                                       data-penalty="{{ bill.effective_penalty }}"
-                                       data-total="{{ bill.total_amount_due }}">
-                            </td>
-                            <td class="border border-dark-300 px-2 py-1.5 font-semibold text-dark-800">{{ bill.billing_period|date:"M Y" }}</td>
-                            <td class="border border-dark-300 px-2 py-1.5 text-center font-semibold text-dark-800">{{ bill.consumption }}</td>
-                            <td class="border border-dark-300 px-2 py-1.5 text-right font-mono text-dark-800">{{ bill.total_amount|floatformat:2|intcomma }}</td>
-                             <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                 {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-                             </td>
-                            <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-400{% endif %}">
-                                {% if bill.effective_penalty > 0 %}
-                                {{ bill.effective_penalty|floatformat:2|intcomma }}
-                                {% else %}
-                                —
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-
-                        <!-- Empty rows to match paper form (fill up to 6 rows) -->
-                        {% with remaining=6 %}
-                        {% for bill in pending_bills %}{% endfor %}
-                        {% if pending_bills|length < 6 %}
-                        {% for i in "123456" %}
-                        {% if forloop.counter > pending_bills|length and forloop.counter <= 6 %}
-                        <tr class="empty-row">
-                            <td class="border border-dark-300 px-1.5 py-1.5">&nbsp;</td>
-                            <td class="border border-dark-300 px-2 py-1.5">&nbsp;</td>
-                            <td class="border border-dark-300 px-2 py-1.5">&nbsp;</td>
-                            <td class="border border-dark-300 px-2 py-1.5">&nbsp;</td>
-                            <td class="border border-dark-300 px-2 py-1.5">&nbsp;</td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                        {% endif %}
-                        {% endwith %}
-                    </tbody>
-                </table>
-
-                <!-- Partial bill hint -->
-                <p class="text-[10px] text-dark-400 mt-1.5 italic">
-                    <i class="bi bi-info-circle mr-0.5"></i>Uncheck newer months to issue a partial bill (oldest months first)
-                </p>
-
-                <!-- Total Amount (updates dynamically) -->
-                <div class="mt-3 pt-3 border-t-2 border-dark-400 flex items-center justify-between">
-                    <span class="text-sm font-bold text-dark-800 uppercase">Total Amount:</span>
-                    <span id="total-amount-display" class="text-xl font-bold text-dark-900 font-mono">
-                        ₱{{ payment_breakdown.total_amount_due|floatformat:2|intcomma }}
-                    </span>
-                </div>
-
-                {% else %}
-                <!-- No Bills -->
-                <div class="text-center py-8">
-                    <div class="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="bi bi-check-circle-fill text-success-600 text-xl"></i>
-                    </div>
-                    <h4 class="text-sm font-bold text-dark-900 mb-1">No Pending Bills</h4>
-                    <p class="text-xs text-dark-500">This consumer has no pending bills.</p>
-                </div>
+                <a href="{% url 'consumers:water_bill_print' selected_consumer.id %}"
+                   id="print-bill-btn"
+                   class="inline-flex items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+                    <i class="bi bi-printer-fill mr-2"></i>Print Bill
+                </a>
                 {% endif %}
             </div>
 
-            <!-- Issued By -->
-            <div class="px-5 py-3 border-t border-dark-200">
-                <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-dark-500 font-semibold uppercase">Issued by:</span>
-                    <span class="text-xs font-semibold text-dark-700 border-b border-dark-300 flex-1 pb-0.5">
-                        {{ request.user.get_full_name|default:request.user.username }}
-                    </span>
+            {# Bill Statement Card #}
+            <div class="bg-white rounded-xl border-2 border-dark-300 shadow-sm overflow-hidden">
+
+                {# Waterworks Header #}
+                <div class="px-5 py-4 border-b-2 border-dark-300 text-center">
+                    <div class="flex items-center justify-center gap-3 mb-1">
+                        <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Seal" class="w-10 h-10 object-contain">
+                        <div>
+                            <h2 class="text-sm font-bold text-dark-900 uppercase tracking-wide">Balilihan Waterworks System</h2>
+                            <p class="text-xs text-dark-500 uppercase">LGU - Balilihan</p>
+                            <p class="text-[10px]" style="color:#555;">Balilihan, 6342, Bohol</p>
+                        </div>
+                        <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="w-10 h-10 object-contain">
+                    </div>
+                    <p class="text-xs font-bold text-dark-700 uppercase tracking-widest mt-1">Water Bill Inquiry</p>
+                </div>
+
+                {# Title & Date #}
+                <div class="px-5 py-2.5 border-b border-dark-200 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-dark-900 uppercase">Bill Statement</h3>
+                    <p class="text-xs text-dark-600">Date: <span class="font-semibold">{% now "n-d-Y" %}</span></p>
+                </div>
+
+                {# Consumer Info #}
+                <div class="px-5 py-3 border-b border-dark-200 space-y-1.5">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Name:</span>
+                        <span class="text-sm font-bold text-dark-900">{{ selected_consumer.last_name }}, {{ selected_consumer.first_name }}{% if selected_consumer.suffix %} {{ selected_consumer.suffix }}{% endif %}</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Barangay:</span>
+                        <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.barangay.name|default:"—" }}</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">ID Number:</span>
+                        <span class="text-sm font-mono font-semibold text-primary-700">{{ selected_consumer.id_number|default:"—" }}</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase w-24 flex-shrink-0">Type:</span>
+                        <span class="text-sm font-semibold text-dark-800">{{ selected_consumer.usage_type }}</span>
+                    </div>
+                </div>
+
+                {# Billing Table #}
+                <div class="px-5 py-3">
+                    <p class="text-xs font-bold text-dark-700 uppercase mb-2">For the Month(s)</p>
+
+                    {% if pending_bills %}
+                    <table class="w-full border-collapse text-xs" id="bill-table">
+                        <thead>
+                            <tr class="bg-dark-100">
+                                <th class="border border-dark-300 px-1.5 py-1.5 text-center font-bold text-dark-700 w-8">
+                                    <input type="checkbox" id="select-all-bills" title="Select/Deselect all" checked class="w-3.5 h-3.5 rounded cursor-pointer accent-primary-600">
+                                </th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-left font-bold text-dark-700">Month/Year</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-center font-bold text-dark-700">consumed<br>(cu.m.)</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-700">Amount</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-success-700">SC Disc.</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-danger-700">Penalty</th>
+                                <th class="border border-dark-300 px-2 py-1.5 text-right font-bold text-dark-900">Total Due</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bill in pending_bills %}
+                            <tr class="bill-row {% if bill.is_overdue %}bg-danger-50{% endif %}" data-index="{{ forloop.counter0 }}">
+                                <td class="border border-dark-300 px-1.5 py-1.5 text-center">
+                                    <input type="checkbox"
+                                           class="bill-checkbox w-3.5 h-3.5 rounded cursor-pointer accent-primary-600"
+                                           checked
+                                           data-index="{{ forloop.counter0 }}"
+                                           data-bill-id="{{ bill.id }}"
+                                           data-amount="{{ bill.total_amount }}"
+                                           data-penalty="{{ bill.effective_penalty }}"
+                                           data-total="{{ bill.total_amount_due }}">
+                                </td>
+                                <td class="border border-dark-300 px-2 py-1.5 font-semibold text-dark-800">{{ bill.billing_period|date:"M Y" }}</td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-center font-semibold text-dark-800">{{ bill.consumption }}</td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-right font-mono text-dark-800">{{ bill.total_amount|floatformat:2|intcomma }}</td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.senior_citizen_discount > 0 %}text-success-600 font-semibold{% else %}text-dark-400{% endif %}">
+                                    {% if bill.senior_citizen_discount > 0 %}-{{ bill.senior_citizen_discount|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+                                </td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-right font-mono {% if bill.effective_penalty > 0 %}text-danger-600 font-semibold{% else %}text-dark-400{% endif %}">
+                                    {% if bill.effective_penalty > 0 %}{{ bill.effective_penalty|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+                                </td>
+                                <td class="border border-dark-300 px-2 py-1.5 text-right font-mono font-bold text-dark-900">{{ bill.total_amount_due|floatformat:2|intcomma }}</td>
+                            </tr>
+                            {% endfor %}
+
+                            {# Filler rows #}
+                            {% if pending_bills|length < 6 %}
+                            {% for i in "123456" %}
+                            {% if forloop.counter > pending_bills|length and forloop.counter <= 6 %}
+                            <tr class="empty-row">
+                                <td class="border border-dark-300 px-1.5 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                                <td class="border border-dark-300 px-2 py-2">&nbsp;</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+
+                    {# Hint #}
+                    <p class="text-[10px] text-dark-400 mt-1.5 italic">
+                        <i class="bi bi-info-circle mr-0.5"></i>Uncheck newer months to issue a partial bill (oldest months first)
+                    </p>
+
+                    {# Total #}
+                    <div class="mt-3 pt-3 border-t-2 border-dark-400 flex items-center justify-between">
+                        <span class="text-sm font-bold text-dark-800 uppercase">Total Amount Due:</span>
+                        <span id="total-amount-display" class="text-xl font-bold text-dark-900 font-mono">
+                            ₱{{ payment_breakdown.total_amount_due|floatformat:2|intcomma }}
+                        </span>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-8">
+                        <div class="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="bi bi-check-circle-fill text-success-600 text-xl"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-dark-900 mb-1">No Pending Bills</h4>
+                        <p class="text-xs text-dark-500">This consumer has no pending bills.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {# Issued By #}
+                <div class="px-5 py-3 border-t border-dark-200">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-dark-500 font-semibold uppercase">Issued by:</span>
+                        <span class="text-xs font-semibold text-dark-700 border-b border-dark-300 flex-1 pb-0.5">
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Action Buttons -->
-        {% if pending_bills %}
-        <div class="flex gap-3 mt-4 justify-center flex-wrap">
-            <a href="{% url 'consumers:water_bill_print' selected_consumer.id %}"
-               id="print-bill-btn"
-               class="inline-flex items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
-                <i class="bi bi-printer-fill mr-2"></i>Print Water Bill
-            </a>
+            {# Bottom Print Button #}
+            {% if pending_bills %}
+            <div class="mt-4 flex justify-end">
+                <a href="{% url 'consumers:water_bill_print' selected_consumer.id %}"
+                   id="print-bill-btn-bottom"
+                   class="inline-flex items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+                    <i class="bi bi-printer-fill mr-2"></i>Print Water Bill
+                </a>
+            </div>
+            {% endif %}
+
         </div>
         {% endif %}
+
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Apply barangay filter via URL
-function applyFilters() {
+function applyBarangayFilter() {
     const barangay = document.getElementById('filter-barangay')?.value || '';
-    const params = new URLSearchParams();
-    if (barangay) params.set('barangay', barangay);
+    const params = new URLSearchParams(window.location.search);
+    if (barangay) {
+        params.set('barangay', barangay);
+    } else {
+        params.delete('barangay');
+    }
+    // Keep selected consumer if any
     window.location.href = '{% url "consumers:inquire" %}?' + params.toString();
 }
 
-// Clear filter
-function clearFilters() {
-    window.location.href = '{% url "consumers:inquire" %}';
+function clearBarangay() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('barangay');
+    window.location.href = '{% url "consumers:inquire" %}?' + params.toString();
 }
 
-// Search consumers by name or ID number (client-side)
+// Client-side search filter
 function filterConsumers() {
     const searchInput = document.getElementById('search-consumer');
     if (!searchInput) return;
-
     const filter = searchInput.value.toLowerCase().trim();
     const cards = document.querySelectorAll('.consumer-card');
     const noResults = document.getElementById('no-results');
     const consumerList = document.getElementById('consumer-list');
-
     let visibleCount = 0;
 
     cards.forEach(card => {
         const name = card.getAttribute('data-name') || '';
         const id = card.getAttribute('data-id') || '';
-
-        if (name.includes(filter) || id.includes(filter)) {
-            card.style.display = '';
-            visibleCount++;
-        } else {
-            card.style.display = 'none';
-        }
+        const show = name.includes(filter) || id.includes(filter);
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
     });
 
-    const visibleCountEl = document.getElementById('visible-count');
-    if (visibleCountEl) {
-        visibleCountEl.textContent = visibleCount;
-    }
+    const el = document.getElementById('visible-count');
+    if (el) el.textContent = visibleCount;
 
     if (noResults && consumerList) {
         noResults.classList.toggle('hidden', visibleCount > 0);
@@ -341,36 +378,32 @@ function filterConsumers() {
     }
 }
 
-// ============ BILL MONTH SELECTION (Partial Bill) ============
+// ============ PARTIAL BILL SELECTION ============
 function initBillSelection() {
     const checkboxes = document.querySelectorAll('.bill-checkbox');
     const selectAll = document.getElementById('select-all-bills');
-    const printBtn = document.getElementById('print-bill-btn');
+    const printBtnTop = document.getElementById('print-bill-btn');
+    const printBtnBottom = document.getElementById('print-bill-btn-bottom');
     const totalDisplay = document.getElementById('total-amount-display');
-    const basePrintUrl = printBtn ? printBtn.href : '';
+    const basePrintUrlTop = printBtnTop ? printBtnTop.href : '';
+    const basePrintUrlBottom = printBtnBottom ? printBtnBottom.href : '';
 
     if (!checkboxes.length) return;
 
-    // Enforce oldest-first: unchecking month N auto-unchecks all newer months
-    // Checking month N auto-checks all older months
+    // Oldest-first constraint
     checkboxes.forEach(cb => {
         cb.addEventListener('change', function() {
             const idx = parseInt(this.dataset.index);
             if (this.checked) {
-                checkboxes.forEach(other => {
-                    if (parseInt(other.dataset.index) < idx) other.checked = true;
-                });
+                checkboxes.forEach(o => { if (parseInt(o.dataset.index) < idx) o.checked = true; });
             } else {
-                checkboxes.forEach(other => {
-                    if (parseInt(other.dataset.index) > idx) other.checked = false;
-                });
+                checkboxes.forEach(o => { if (parseInt(o.dataset.index) > idx) o.checked = false; });
             }
             updateSelectAll();
             updateBillDisplay();
         });
     });
 
-    // Select-all toggle
     if (selectAll) {
         selectAll.addEventListener('change', function() {
             checkboxes.forEach(cb => cb.checked = this.checked);
@@ -380,18 +413,15 @@ function initBillSelection() {
 
     function updateSelectAll() {
         if (!selectAll) return;
-        const total = checkboxes.length;
         const checked = document.querySelectorAll('.bill-checkbox:checked').length;
-        selectAll.checked = checked === total;
-        selectAll.indeterminate = checked > 0 && checked < total;
+        selectAll.checked = checked === checkboxes.length;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
     }
 
     function updateBillDisplay() {
-        const checked = document.querySelectorAll('.bill-checkbox:checked');
         let totalDue = 0;
         const billIds = [];
 
-        // Dim unchecked rows, highlight checked
         checkboxes.forEach(cb => {
             const row = cb.closest('tr');
             if (cb.checked) {
@@ -403,27 +433,25 @@ function initBillSelection() {
             }
         });
 
-        // Update total amount
-        if (totalDisplay) {
-            totalDisplay.textContent = '₱' + totalDue.toFixed(2);
-        }
+        if (totalDisplay) totalDisplay.textContent = '₱' + totalDue.toFixed(2);
 
-        // Update URLs with selected bill IDs for partial payments
-        if (printBtn) {
-            const hasPartialSelection = billIds.length > 0 && billIds.length < checkboxes.length;
-            const paramString = hasPartialSelection ? '?bills=' + billIds.join(',') : '';
+        const hasPartial = billIds.length > 0 && billIds.length < checkboxes.length;
+        const paramString = hasPartial ? '?bills=' + billIds.join(',') : '';
 
-            printBtn.href = basePrintUrl + paramString;
+        [printBtnTop, printBtnBottom].forEach(btn => {
+            if (!btn) return;
+            // Extract base URL (strip any existing ?bills= param)
+            const baseUrl = btn.href.split('?')[0];
+            btn.href = baseUrl + paramString;
             if (billIds.length === 0) {
-                printBtn.classList.add('pointer-events-none', 'opacity-50');
+                btn.classList.add('pointer-events-none', 'opacity-50');
             } else {
-                printBtn.classList.remove('pointer-events-none', 'opacity-50');
+                btn.classList.remove('pointer-events-none', 'opacity-50');
             }
-        }
+        });
     }
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-consumer');
     if (searchInput) {
@@ -432,15 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearTimeout(timeout);
             timeout = setTimeout(filterConsumers, 200);
         });
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                filterConsumers();
-            }
-        });
     }
-
-    // Init bill selection on water bill view
     initBillSelection();
 });
 </script>

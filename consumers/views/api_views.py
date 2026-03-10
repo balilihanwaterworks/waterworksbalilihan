@@ -326,11 +326,6 @@ def api_submit_reading(request):
                 senior_citizen_discount=sc_discount,
                 status='Pending'
             )
-            
-            # Send SMS Bill Alert
-            from ..utils import send_bill_sms
-            send_bill_sms(bill)
-
             # Create notification for new meter reading
             from ..models import Notification
             from django.urls import reverse
@@ -684,11 +679,6 @@ def api_confirm_reading(request, reading_id):
             senior_citizen_discount=sc_discount,
             status='Pending'
         )
-
-        # Send SMS Bill Alert
-        from ..utils import send_bill_sms
-        send_bill_sms(bill)
-
         # Update reading status
         reading.is_confirmed = True
         reading.confirmed_by = request.user

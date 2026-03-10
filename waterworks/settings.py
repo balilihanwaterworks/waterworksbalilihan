@@ -330,17 +330,6 @@ if not DEBUG:
                 'level': 'ERROR',
                 'propagate': False,
             },
-            'sms_notifications': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
         },
     }
 
-# ============================================================================
-# SEMAPHORE SMS CONFIGURATION (For Billing Alerts)
-# ============================================================================
-SEMAPHORE_API_KEY = config('SEMAPHORE_API_KEY', default='')
-SEMAPHORE_SENDER_NAME = config('SEMAPHORE_SENDER_NAME', default='SEMAPHORE')
-SMS_NOTIFICATIONS_ENABLED = config('SMS_NOTIFICATIONS_ENABLED', default=False, cast=bool)

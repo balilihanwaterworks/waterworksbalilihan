@@ -542,11 +542,6 @@ def confirm_all_readings(request, barangay_id):
                 total_amount=total,
                 status='Pending'
             )
-            
-            # Send SMS Bill Alert
-            from ..utils import send_bill_sms
-            send_bill_sms(bill)
-            
             reading.is_confirmed = True
             reading.save()
             success_count += 1
@@ -645,11 +640,6 @@ def confirm_all_readings_global(request):
                 total_amount=total,
                 status='Pending'
             )
-            
-            # Send SMS Bill Alert
-            from ..utils import send_bill_sms
-            send_bill_sms(bill)
-            
             reading.is_confirmed = True
             reading.save()
             success_count += 1
@@ -862,11 +852,6 @@ def confirm_reading(request, reading_id):
             total_amount=total_amount,
             status='Pending'
         )
-
-        # Send SMS Bill Alert
-        from ..utils import send_bill_sms
-        send_bill_sms(bill)
-
         # Mark reading as confirmed
         current.is_confirmed = True
         current.confirmed_by = request.user

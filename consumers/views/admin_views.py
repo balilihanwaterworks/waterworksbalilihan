@@ -1499,10 +1499,10 @@ def test_email(request):
 
         # Create SMTP connection
         if settings.EMAIL_USE_TLS:
-            server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+            server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=10)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+            server = smtplib.SMTP_SSL(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=10)
 
         result['tests'][-1]['status'] = 'PASS'
         result['tests'][-1]['message'] = 'Connected to Gmail SMTP server'

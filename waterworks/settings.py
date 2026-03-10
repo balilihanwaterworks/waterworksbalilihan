@@ -236,8 +236,8 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='').strip()
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@balilihan-waterworks.com'
 SERVER_EMAIL = EMAIL_HOST_USER
 
-# Email timeout settings (increased for reliability)
-EMAIL_TIMEOUT = 30  # seconds
+# Email timeout settings (reduced to avoid 502 Bad Gateway from Gunicorn timeouts)
+EMAIL_TIMEOUT = 10  # seconds
 
 # Debug logging for email configuration (only logs non-sensitive info)
 import logging

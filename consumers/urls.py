@@ -110,6 +110,7 @@ urlpatterns = [
     path('user-login-history/<int:user_id>/', views.user_specific_login_history, name='user_specific_login_history'),
     path('session/<int:session_id>/activities/', views.session_activities, name='session_activities'),
     path('user-management/', views.user_management, name='user_management'),
+    path('area-management/', views.area_management, name='area_management'),
     path('user/create/', views.create_user, name='create_user'),
     path('user/<int:user_id>/edit/', views.edit_user, name='edit_user'),
     path('user/<int:user_id>/delete/', views.delete_user, name='delete_user'),

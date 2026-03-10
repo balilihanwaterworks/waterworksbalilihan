@@ -1,0 +1,336 @@
+{% extends "consumers/base.html" %}
+{% load static %}
+
+{% block title %}Area Management{% endblock %}
+
+{% block main_content %}
+<div class="max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
+    <!-- Page Header -->
+    <div class="mb-5 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-success-500 to-success-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="bi bi-geo-alt-fill text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-dark-900">Area Management</h2>
+                    <p class="text-dark-500 text-sm mt-0.5">Manage Barangays and their respective Puroks</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openModal('addBarangayModal')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-success-500 to-success-600 text-white text-sm font-medium rounded-xl hover:from-success-600 hover:to-success-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    Add Barangay
+                </button>
+                <a href="{% url 'consumers:user_management' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-medium rounded-xl transition-all duration-200 shadow-sm">
+                    <i class="bi bi-arrow-left"></i>
+                    Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-5 space-y-2 flex-shrink-0">
+        {% for message in messages %}
+        <div class="flex items-center justify-between p-3.5 rounded-lg border-l-4 {% if message.tags == 'success' %}bg-success-50 border-success-500 text-success-900{% elif message.tags == 'error' %}bg-danger-50 border-danger-500 text-danger-900{% else %}bg-info-50 border-info-500 text-info-900{% endif %} shadow-sm">
+            <div class="flex items-center gap-3">
+                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'error' %}bi-x-circle-fill{% else %}bi-info-circle-fill{% endif %} text-lg"></i>
+                <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-dark-500 hover:text-dark-700 transition-colors">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- TWO COLUMN LAYOUT -->
+    <div class="flex flex-1 overflow-hidden gap-5 rounded-xl">
+        
+        <!-- LEFT COLUMN: Barangays -->
+        <div class="w-1/3 flex flex-col bg-white border border-light-200 rounded-xl shadow-sm overflow-hidden flex-shrink-0">
+            <div class="bg-light-50 px-5 py-3.5 border-b border-light-200 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-sm font-bold text-dark-800 uppercase tracking-wide">Barangays ({{ barangays|length }})</h3>
+                <i class="bi bi-map text-dark-400"></i>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 bg-light-50/50">
+                {% if barangays %}
+                <div class="space-y-2">
+                    {% for barangay in barangays %}
+                    <div class="group flex items-center justify-between p-3 rounded-lg border {% if selected_barangay.id == barangay.id %}bg-success-50 border-success-200{% else %}bg-white border-light-200 hover:border-success-300 hover:shadow-sm{% endif %} transition-all cursor-pointer"
+                         onclick="window.location.href='?barangay={{ barangay.id }}'">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center {% if selected_barangay.id == barangay.id %}bg-success-100 text-success-600{% else %}bg-light-100 text-dark-400 group-hover:bg-success-50 group-hover:text-success-500{% endif %}">
+                                <i class="bi bi-geo-alt-fill text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold {% if selected_barangay.id == barangay.id %}text-success-800{% else %}text-dark-800{% endif %}">{{ barangay.name }}</h4>
+                                <p class="text-[10px] text-dark-400 uppercase tracking-wide">{{ barangay.puroks.count }} Puroks</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="event.stopPropagation(); openEditBarangayModal({{ barangay.id }}, '{{ barangay.name|escapejs }}')" class="p-1.5 text-light-400 hover:text-primary-600 hover:bg-primary-50 rounded" title="Edit">
+                                <i class="bi bi-pencil-fill text-xs"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); confirmDelete('barangay', {{ barangay.id }}, '{{ barangay.name|escapejs }}')" class="p-1.5 text-light-400 hover:text-danger-600 hover:bg-danger-50 rounded" title="Delete">
+                                <i class="bi bi-trash-fill text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="h-full flex flex-col items-center justify-center text-center p-6">
+                    <div class="w-12 h-12 bg-light-200 rounded-full flex items-center justify-center mb-3">
+                        <i class="bi bi-map text-dark-400 text-xl"></i>
+                    </div>
+                    <p class="text-sm font-bold text-dark-800">No Barangays Found</p>
+                    <p class="text-xs text-dark-500 mt-1">Add a new barangay to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Puroks -->
+        <div class="flex-1 flex flex-col bg-white border border-light-200 rounded-xl shadow-sm overflow-hidden">
+            {% if selected_barangay %}
+            <div class="bg-success-600 px-5 py-3.5 border-b border-light-200 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <i class="bi bi-geo text-white/80"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wide">Puroks in {{ selected_barangay.name }}</h3>
+                    <span class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full">{{ puroks|length }}</span>
+                </div>
+                <button onclick="openModal('addPurokModal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+                    <i class="bi bi-plus-lg"></i> Add Purok
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-5">
+                {% if puroks %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for purok in puroks %}
+                    <div class="group flex items-center justify-between p-4 bg-white border border-light-200 rounded-xl hover:shadow-md hover:border-success-300 transition-all">
+                        <div class="flex items-center gap-3">
+                            <i class="bi bi-signpost-split text-dark-300 text-lg group-hover:text-success-500 transition-colors"></i>
+                            <h4 class="text-sm font-bold text-dark-800">{{ purok.name }}</h4>
+                        </div>
+                        <div class="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openEditPurokModal({{ purok.id }}, '{{ purok.name|escapejs }}')" class="w-7 h-7 flex items-center justify-center rounded bg-light-50 hover:bg-primary-50 text-light-500 hover:text-primary-600 transition-colors border border-light-200" title="Edit">
+                                <i class="bi bi-pencil-fill text-[10px]"></i>
+                            </button>
+                            <button onclick="confirmDelete('purok', {{ purok.id }}, '{{ purok.name|escapejs }}')" class="w-7 h-7 flex items-center justify-center rounded bg-light-50 hover:bg-danger-50 text-light-500 hover:text-danger-600 transition-colors border border-light-200" title="Delete">
+                                <i class="bi bi-trash-fill text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="h-full flex flex-col items-center justify-center text-center p-8">
+                    <div class="w-14 h-14 bg-light-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="bi bi-signpost-split text-dark-400 text-2xl"></i>
+                    </div>
+                    <p class="text-base font-bold text-dark-800 mb-1">No Puroks Found</p>
+                    <p class="text-sm text-dark-500 max-w-sm mb-5">There are no puroks listed under {{ selected_barangay.name }}.</p>
+                    <button onclick="openModal('addPurokModal')" class="inline-flex items-center gap-2 px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                        <i class="bi bi-plus-lg"></i> Add First Purok
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <!-- Unselected State -->
+            <div class="h-full flex flex-col items-center justify-center text-center p-8 bg-light-50/50">
+                <div class="w-16 h-16 bg-white border border-light-200 shadow-sm rounded-full flex items-center justify-center mb-4 text-primary-500">
+                    <i class="bi bi-geo-alt text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-dark-800 mb-1">Select a Barangay</h3>
+                <p class="text-sm text-dark-500 max-w-xs">Click on any barangay from the left list to view and manage its puroks.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ======================= MODALS ======================= -->
+
+<!-- Add Barangay Modal -->
+<div id="addBarangayModal" class="hidden fixed inset-0 bg-dark-900/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-success-600 to-success-700 px-5 py-4 flex items-center justify-between">
+            <h3 class="text-white font-bold text-sm flex items-center gap-2">
+                <i class="bi bi-plus-circle"></i> Add New Barangay
+            </h3>
+            <button onclick="closeModal('addBarangayModal')" class="text-white/70 hover:text-white transition-colors">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'consumers:area_management' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_barangay">
+            <div class="p-5">
+                <label class="block text-xs font-bold text-dark-700 uppercase tracking-wide mb-1.5">Barangay Name <span class="text-danger-500">*</span></label>
+                <input type="text" name="barangay_name" required autofocus class="w-full px-4 py-2.5 text-sm bg-light-50 border border-light-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:border-transparent transition-all">
+            </div>
+            <div class="bg-light-50 px-5 py-3.5 border-t border-light-200 flex justify-end gap-2">
+                <button type="button" onclick="closeModal('addBarangayModal')" class="px-4 py-2 text-dark-600 text-sm font-semibold hover:bg-light-200 rounded-lg transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">Save Barangay</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Barangay Modal -->
+<div id="editBarangayModal" class="hidden fixed inset-0 bg-dark-900/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-success-600 to-success-700 px-5 py-4 flex items-center justify-between">
+            <h3 class="text-white font-bold text-sm flex items-center gap-2">
+                <i class="bi bi-pencil-square"></i> Edit Barangay
+            </h3>
+            <button onclick="closeModal('editBarangayModal')" class="text-white/70 hover:text-white transition-colors">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'consumers:area_management' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_barangay">
+            <input type="hidden" name="barangay_id" id="edit_barangay_id">
+            <div class="p-5">
+                <label class="block text-xs font-bold text-dark-700 uppercase tracking-wide mb-1.5">Barangay Name <span class="text-danger-500">*</span></label>
+                <input type="text" name="barangay_name" id="edit_barangay_name" required class="w-full px-4 py-2.5 text-sm bg-light-50 border border-light-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:border-transparent transition-all">
+            </div>
+            <div class="bg-light-50 px-5 py-3.5 border-t border-light-200 flex justify-end gap-2">
+                <button type="button" onclick="closeModal('editBarangayModal')" class="px-4 py-2 text-dark-600 text-sm font-semibold hover:bg-light-200 rounded-lg transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Purok Modal -->
+{% if selected_barangay %}
+<div id="addPurokModal" class="hidden fixed inset-0 bg-dark-900/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-success-600 to-success-700 px-5 py-4 flex items-center justify-between">
+            <h3 class="text-white font-bold text-sm flex items-center gap-2">
+                <i class="bi bi-plus-circle"></i> Add Purok to {{ selected_barangay.name }}
+            </h3>
+            <button onclick="closeModal('addPurokModal')" class="text-white/70 hover:text-white transition-colors">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'consumers:area_management' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_purok">
+            <input type="hidden" name="barangay_id" value="{{ selected_barangay.id }}">
+            <div class="p-5">
+                <label class="block text-xs font-bold text-dark-700 uppercase tracking-wide mb-1.5">Purok Name <span class="text-danger-500">*</span></label>
+                <input type="text" name="purok_name" required autofocus placeholder="e.g. Purok 1" class="w-full px-4 py-2.5 text-sm bg-light-50 border border-light-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:border-transparent transition-all">
+            </div>
+            <div class="bg-light-50 px-5 py-3.5 border-t border-light-200 flex justify-end gap-2">
+                <button type="button" onclick="closeModal('addPurokModal')" class="px-4 py-2 text-dark-600 text-sm font-semibold hover:bg-light-200 rounded-lg transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">Save Purok</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Purok Modal -->
+<div id="editPurokModal" class="hidden fixed inset-0 bg-dark-900/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-success-600 to-success-700 px-5 py-4 flex items-center justify-between">
+            <h3 class="text-white font-bold text-sm flex items-center gap-2">
+                <i class="bi bi-pencil-square"></i> Edit Purok
+            </h3>
+            <button onclick="closeModal('editPurokModal')" class="text-white/70 hover:text-white transition-colors">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'consumers:area_management' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_purok">
+            <input type="hidden" name="purok_id" id="edit_purok_id">
+            <div class="p-5">
+                <label class="block text-xs font-bold text-dark-700 uppercase tracking-wide mb-1.5">Purok Name <span class="text-danger-500">*</span></label>
+                <input type="text" name="purok_name" id="edit_purok_name" required class="w-full px-4 py-2.5 text-sm bg-light-50 border border-light-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:border-transparent transition-all">
+            </div>
+            <div class="bg-light-50 px-5 py-3.5 border-t border-light-200 flex justify-end gap-2">
+                <button type="button" onclick="closeModal('editPurokModal')" class="px-4 py-2 text-dark-600 text-sm font-semibold hover:bg-light-200 rounded-lg transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Hidden form for deleting items -->
+<form id="deleteForm" method="POST" action="{% url 'consumers:area_management' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="deleteAction">
+    <!-- Uses either barangay_id or purok_id depending on the action -->
+    <input type="hidden" name="barangay_id" id="deleteBarangayId">
+    <input type="hidden" name="purok_id" id="deletePurokId">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function openEditBarangayModal(id, name) {
+        document.getElementById('edit_barangay_id').value = id;
+        document.getElementById('edit_barangay_name').value = name;
+        openModal('editBarangayModal');
+    }
+
+    function openEditPurokModal(id, name) {
+        document.getElementById('edit_purok_id').value = id;
+        document.getElementById('edit_purok_name').value = name;
+        openModal('editPurokModal');
+    }
+
+    function confirmDelete(type, id, name) {
+        const isBarangay = type === 'barangay';
+        
+        Swal.fire({
+            title: `Delete ${isBarangay ? 'Barangay' : 'Purok'}?`,
+            text: `Are you sure you want to delete ${name}? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteAction').value = isBarangay ? 'delete_barangay' : 'delete_purok';
+                if (isBarangay) {
+                    document.getElementById('deleteBarangayId').value = id;
+                } else {
+                    document.getElementById('deletePurokId').value = id;
+                }
+                document.getElementById('deleteForm').submit();
+            }
+        });
+    }
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('[id$="Modal"]').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+        }
+    });
+</script>
+{% endblock %}

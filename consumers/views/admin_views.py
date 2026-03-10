@@ -1576,3 +1576,109 @@ def test_email(request):
         logger.error(f"Email test error: {e}", exc_info=True)
 
     return JsonResponse(result, json_dumps_params={'indent': 2})
+
+
+@login_required
+@is_admin_user
+def area_management(request):
+    """
+    Dedicated view for managing Barangays and Puroks natively.
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # --- BARANGAY ACTIONS ---
+        if action == 'add_barangay':
+            name = request.POST.get('barangay_name', '').strip()
+            if name:
+                if Barangay.objects.filter(name__iexact=name).exists():
+                    messages.error(request, f"Barangay '{name}' already exists.")
+                else:
+                    Barangay.objects.create(name=name)
+                    messages.success(request, f"Barangay '{name}' added successfully.")
+            return redirect('consumers:area_management')
+            
+        elif action == 'edit_barangay':
+            barangay_id = request.POST.get('barangay_id')
+            new_name = request.POST.get('barangay_name', '').strip()
+            if barangay_id and new_name:
+                barangay = get_object_or_404(Barangay, id=barangay_id)
+                if Barangay.objects.filter(name__iexact=new_name).exclude(id=barangay_id).exists():
+                    messages.error(request, f"Barangay '{new_name}' already exists.")
+                else:
+                    barangay.name = new_name
+                    barangay.save()
+                    messages.success(request, "Barangay updated successfully.")
+            return redirect('consumers:area_management')
+            
+        elif action == 'delete_barangay':
+            barangay_id = request.POST.get('barangay_id')
+            if barangay_id:
+                barangay = get_object_or_404(Barangay, id=barangay_id)
+                # Check if it has consumers assigned
+                if Consumer.objects.filter(barangay=barangay).exists():
+                    messages.error(request, f"Cannot delete '{barangay.name}' because consumers are assigned to it.")
+                else:
+                    name = barangay.name
+                    barangay.delete()
+                    messages.success(request, f"Barangay '{name}' deleted successfully.")
+            return redirect('consumers:area_management')
+            
+        # --- PUROK ACTIONS ---
+        elif action == 'add_purok':
+            barangay_id = request.POST.get('barangay_id')
+            name = request.POST.get('purok_name', '').strip()
+            if barangay_id and name:
+                barangay = get_object_or_404(Barangay, id=barangay_id)
+                if Purok.objects.filter(name__iexact=name, barangay=barangay).exists():
+                    messages.error(request, f"Purok '{name}' already exists in this barangay.")
+                else:
+                    Purok.objects.create(name=name, barangay=barangay)
+                    messages.success(request, f"Purok '{name}' added successfully.")
+            return redirect(f"{reverse('consumers:area_management')}?barangay={barangay_id}")
+            
+        elif action == 'edit_purok':
+            purok_id = request.POST.get('purok_id')
+            new_name = request.POST.get('purok_name', '').strip()
+            if purok_id and new_name:
+                purok = get_object_or_404(Purok, id=purok_id)
+                if Purok.objects.filter(name__iexact=new_name, barangay=purok.barangay).exclude(id=purok_id).exists():
+                    messages.error(request, f"Purok '{new_name}' already exists in this barangay.")
+                else:
+                    purok.name = new_name
+                    purok.save()
+                    messages.success(request, "Purok updated successfully.")
+            # Redirect back to the selected barangay
+            purok = get_object_or_404(Purok, id=request.POST.get('purok_id'))
+            return redirect(f"{reverse('consumers:area_management')}?barangay={purok.barangay.id}")
+            
+        elif action == 'delete_purok':
+            purok_id = request.POST.get('purok_id')
+            if purok_id:
+                purok = get_object_or_404(Purok, id=purok_id)
+                barangay_id = purok.barangay.id
+                # Check if it has consumers assigned
+                if Consumer.objects.filter(purok=purok).exists():
+                    messages.error(request, f"Cannot delete '{purok.name}' because consumers are assigned to it.")
+                else:
+                    name = purok.name
+                    purok.delete()
+                    messages.success(request, f"Purok '{name}' deleted successfully.")
+                return redirect(f"{reverse('consumers:area_management')}?barangay={barangay_id}")
+
+    # GET request handler
+    barangays = Barangay.objects.all().order_by('name')
+    selected_barangay = None
+    puroks = []
+    
+    barangay_id = request.GET.get('barangay')
+    if barangay_id:
+        selected_barangay = get_object_or_404(Barangay, id=barangay_id)
+        puroks = selected_barangay.puroks.all().order_by('name')
+
+    context = {
+        'barangays': barangays,
+        'selected_barangay': selected_barangay,
+        'puroks': puroks,
+    }
+    return render(request, 'consumers/area_management.html', context)

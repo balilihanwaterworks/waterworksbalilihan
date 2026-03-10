@@ -25,8 +25,8 @@ urlpatterns = [
     # Consumer Management
     path('consumer-management/', views.consumer_management, name='consumer_management'),
     path('consumer/add/', views.add_consumer, name='add_consumer'),
-    path('consumers/', views.consumer_list, name='consumer_list'),
-    path('consumer/<int:consumer_id>/', views.consumer_detail, name='consumer_detail'),
+    path('consumers/', views.ConsumerListView.as_view(), name='consumer_list'),
+    path('consumer/<int:consumer_id>/', views.ConsumerDetailView.as_view(), name='consumer_detail'),
     path('consumer/<int:consumer_id>/edit/', views.edit_consumer, name='edit_consumer'),
     path('consumer/<int:consumer_id>/bills/', views.consumer_bill, name='consumer_bill'),
     path('consumer/import/', views.import_consumers_csv, name='import_consumers_csv'),
@@ -34,7 +34,7 @@ urlpatterns = [
 
     # Meter Readings
     path('meter-reading-overview/', views.meter_reading_overview, name='meter_reading_overview'),
-    path('meter-readings/', views.meter_readings, name='meter_readings'),
+    path('meter-readings/', views.MeterReadingListView.as_view(), name='meter_readings'),
     path('meter-readings/print/', views.meter_readings_print, name='meter_readings_print'),
     path('meter-readings/barangay/<int:barangay_id>/', views.barangay_meter_readings, name='barangay_meter_readings'),
     path('meter-readings/barangay/<int:barangay_id>/print/', views.barangay_meter_readings_print, name='barangay_meter_readings_print'),

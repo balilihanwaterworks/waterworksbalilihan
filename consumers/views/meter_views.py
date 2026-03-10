@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from ..decorators import (
@@ -512,7 +515,7 @@ def confirm_all_readings(request, barangay_id):
                 settings=setting
             )
 
-            Bill.objects.create(
+            bill = Bill.objects.create(
                 consumer=reading.consumer,
                 previous_reading=prev,
                 current_reading=reading,
@@ -539,6 +542,11 @@ def confirm_all_readings(request, barangay_id):
                 total_amount=total,
                 status='Pending'
             )
+            
+            # Send SMS Bill Alert
+            from ..utils import send_bill_sms
+            send_bill_sms(bill)
+            
             reading.is_confirmed = True
             reading.save()
             success_count += 1
@@ -610,7 +618,7 @@ def confirm_all_readings_global(request):
                 settings=setting
             )
 
-            Bill.objects.create(
+            bill = Bill.objects.create(
                 consumer=consumer,
                 previous_reading=prev,
                 current_reading=reading,
@@ -637,6 +645,11 @@ def confirm_all_readings_global(request):
                 total_amount=total,
                 status='Pending'
             )
+            
+            # Send SMS Bill Alert
+            from ..utils import send_bill_sms
+            send_bill_sms(bill)
+            
             reading.is_confirmed = True
             reading.save()
             success_count += 1
@@ -823,7 +836,7 @@ def confirm_reading(request, reading_id):
             settings=setting
         )
 
-        Bill.objects.create(
+        bill = Bill.objects.create(
             consumer=consumer,
             previous_reading=previous,
             current_reading=current,
@@ -849,6 +862,10 @@ def confirm_reading(request, reading_id):
             total_amount=total_amount,
             status='Pending'
         )
+
+        # Send SMS Bill Alert
+        from ..utils import send_bill_sms
+        send_bill_sms(bill)
 
         # Mark reading as confirmed
         current.is_confirmed = True
@@ -1029,142 +1046,152 @@ def meter_readings_print(request):
 
 
 
-@login_required
-def meter_readings(request):
+class MeterReadingListView(LoginRequiredMixin, ListView):
     """
-    Unified meter readings management view with tabbed interface.
+    Unified meter readings management view with tabbed interface using CBV.
     - All Readings tab: Shows all readings with filters
     - Pending Review tab: Shows only unconfirmed readings
     """
-    # Check if export is requested
-    if request.GET.get('export') == 'excel':
-        return export_meter_readings_excel(request)
+    model = MeterReading
+    template_name = 'consumers/meter_readings.html'
+    context_object_name = 'readings'
 
-    today = date.today()
+    def get_queryset(self):
+        # We don't use standard pagination here because of the complex array-building logic
+        # Instead, we'll build the reading list in get_context_data to maintain the existing format
+        return MeterReading.objects.none()
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = date.today()
 
-    # Get all barangays for filter
-    barangays = Barangay.objects.all().order_by('name')
+        # Get all barangays for filter
+        barangays = Barangay.objects.all().order_by('name')
 
-    from django.db.models import OuterRef, Subquery, FloatField
+        # Subquery to fetch the most recent confirmed reading prior to the current reading date
+        prev_reading_sq = MeterReading.objects.filter(
+            consumer=OuterRef('consumer'),
+            is_confirmed=True,
+            reading_date__lt=OuterRef('reading_date')
+        ).order_by('-reading_date').values('reading_value')[:1]
 
-    # Subquery to fetch the most recent confirmed reading prior to the current reading date
-    prev_reading_sq = MeterReading.objects.filter(
-        consumer=OuterRef('consumer'),
-        is_confirmed=True,
-        reading_date__lt=OuterRef('reading_date')
-    ).order_by('-reading_date').values('reading_value')[:1]
+        # Get all meter readings with related data AND annotated previous reading
+        readings_queryset = MeterReading.objects.select_related(
+            'consumer', 'consumer__barangay', 'submitted_by'
+        ).annotate(
+            prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
+        ).order_by('-reading_date', '-created_at')
 
-    # Get all meter readings with related data AND annotated previous reading
-    readings_queryset = MeterReading.objects.select_related(
-        'consumer', 'consumer__barangay', 'submitted_by'
-    ).annotate(
-        prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
-    ).order_by('-reading_date', '-created_at')
+        # Apply filters
+        search_query = self.request.GET.get('search', '').strip()
+        selected_barangay = self.request.GET.get('barangay', '')
+        selected_status = self.request.GET.get('status', '')
+        from_date = self.request.GET.get('from_date', '')
+        to_date = self.request.GET.get('to_date', '')
 
-    # Apply filters
-    search_query = request.GET.get('search', '').strip()
-    selected_barangay = request.GET.get('barangay', '')
-    selected_status = request.GET.get('status', '')
-    from_date = request.GET.get('from_date', '')
-    to_date = request.GET.get('to_date', '')
+        if search_query:
+            readings_queryset = readings_queryset.filter(
+                Q(consumer__first_name__icontains=search_query) |
+                Q(consumer__last_name__icontains=search_query) |
+                Q(consumer__id_number__icontains=search_query)
+            )
 
-    if search_query:
-        readings_queryset = readings_queryset.filter(
-            Q(consumer__first_name__icontains=search_query) |
-            Q(consumer__last_name__icontains=search_query) |
-            Q(consumer__id_number__icontains=search_query)
-        )
+        if selected_barangay:
+            readings_queryset = readings_queryset.filter(consumer__barangay_id=selected_barangay)
 
-    if selected_barangay:
-        readings_queryset = readings_queryset.filter(consumer__barangay_id=selected_barangay)
+        if selected_status:
+            if selected_status == 'confirmed':
+                readings_queryset = readings_queryset.filter(is_confirmed=True)
+            elif selected_status == 'pending':
+                readings_queryset = readings_queryset.filter(is_confirmed=False, is_rejected=False)
 
-    if selected_status:
-        if selected_status == 'confirmed':
-            readings_queryset = readings_queryset.filter(is_confirmed=True)
-        elif selected_status == 'pending':
-            readings_queryset = readings_queryset.filter(is_confirmed=False, is_rejected=False)
+        if from_date:
+            readings_queryset = readings_queryset.filter(reading_date__gte=from_date)
 
-    if from_date:
-        readings_queryset = readings_queryset.filter(reading_date__gte=from_date)
+        if to_date:
+            readings_queryset = readings_queryset.filter(reading_date__lte=to_date)
 
-    if to_date:
-        readings_queryset = readings_queryset.filter(reading_date__lte=to_date)
+        # Prepare readings with consumption data efficiently without N+1 queries
+        readings_with_data = []
+        
+        class MockPrevReading:
+            def __init__(self, val):
+                self.reading_value = val
 
-    # Prepare readings with consumption data efficiently without N+1 queries
-    readings_with_data = []
-    
-    class MockPrevReading:
-        def __init__(self, val):
-            self.reading_value = val
+        for reading in readings_queryset[:500]:  # Limit to recent 500 for performance
+            if reading.prev_reading_value is None:
+                baseline = reading.consumer.first_reading or 0
+                prev_reading = MockPrevReading(baseline)
+                consumption = reading.reading_value - baseline if reading.reading_value >= baseline else 0
+            else:
+                prev_reading = MockPrevReading(reading.prev_reading_value)
+                consumption = reading.reading_value - reading.prev_reading_value
 
-    for reading in readings_queryset[:500]:  # Limit to recent 500 for performance
-        if reading.prev_reading_value is None:
-            baseline = reading.consumer.first_reading or 0
-            prev_reading = MockPrevReading(baseline)
-            consumption = reading.reading_value - baseline if reading.reading_value >= baseline else 0
-        else:
-            prev_reading = MockPrevReading(reading.prev_reading_value)
-            consumption = reading.reading_value - reading.prev_reading_value
+            readings_with_data.append({
+                'reading': reading,
+                'prev_reading': prev_reading,
+                'consumption': consumption if reading.is_confirmed else (consumption if consumption >= 0 else 0),
+                'display_id': reading.consumer.id_number
+            })
 
-        readings_with_data.append({
-            'reading': reading,
-            'prev_reading': prev_reading,
-            'consumption': consumption if reading.is_confirmed else (consumption if consumption >= 0 else 0),
-            'display_id': reading.consumer.id_number
+        # Get pending readings for Pending tab, annotated with previous reading
+        pending_readings = MeterReading.objects.filter(
+            is_confirmed=False,
+            is_rejected=False,
+            source='app_manual'  # Manual entry from Smart Meter Reader app
+        ).select_related('consumer', 'consumer__barangay', 'submitted_by').annotate(
+            prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
+        ).order_by('-reading_date')
+
+        # Calculate consumption directly from annotation
+        for reading in pending_readings:
+            if reading.prev_reading_value is not None:
+                reading.previous_reading = reading.prev_reading_value
+                reading.consumption = reading.reading_value - reading.prev_reading_value
+            else:
+                baseline = reading.consumer.first_reading or 0
+                reading.previous_reading = baseline
+                reading.consumption = reading.reading_value - baseline
+
+        # Calculate statistics
+        total_count = len(readings_with_data)
+        confirmed_count = sum(1 for item in readings_with_data if item['reading'].is_confirmed)
+        pending_count = sum(1 for item in readings_with_data if not item['reading'].is_confirmed and not item['reading'].is_rejected)
+
+        # Calculate average consumption
+        consumptions = [item['consumption'] for item in readings_with_data if item['consumption'] is not None and item['consumption'] > 0]
+        avg_consumption = sum(consumptions) / len(consumptions) if consumptions else 0
+
+        # Confirmed today count
+        confirmed_today_count = MeterReading.objects.filter(
+            is_confirmed=True,
+            confirmed_at__date=today
+        ).count()
+
+        context.update({
+            'readings': readings_with_data,  # Override the empty queryset
+            'pending_readings': pending_readings,
+            'barangays': barangays,
+            'search_query': search_query,
+            'selected_barangay': selected_barangay,
+            'selected_status': selected_status,
+            'from_date': from_date,
+            'to_date': to_date,
+            'total_count': total_count,
+            'confirmed_count': confirmed_count,
+            'pending_count': pending_count,
+            'avg_consumption': avg_consumption,
+            'confirmed_today_count': confirmed_today_count,
+            'is_paginated': False,
         })
+        
+        return context
 
-    # Get pending readings for Pending tab, annotated with previous reading
-    pending_readings = MeterReading.objects.filter(
-        is_confirmed=False,
-        is_rejected=False,
-        source='app_manual'  # Manual entry from Smart Meter Reader app
-    ).select_related('consumer', 'consumer__barangay', 'submitted_by').annotate(
-        prev_reading_value=Subquery(prev_reading_sq, output_field=FloatField())
-    ).order_by('-reading_date')
-
-    # Calculate consumption directly from annotation
-    for reading in pending_readings:
-        if reading.prev_reading_value is not None:
-            reading.previous_reading = reading.prev_reading_value
-            reading.consumption = reading.reading_value - reading.prev_reading_value
-        else:
-            baseline = reading.consumer.first_reading or 0
-            reading.previous_reading = baseline
-            reading.consumption = reading.reading_value - baseline
-
-    # Calculate statistics
-    total_count = len(readings_with_data)
-    confirmed_count = sum(1 for item in readings_with_data if item['reading'].is_confirmed)
-    pending_count = sum(1 for item in readings_with_data if not item['reading'].is_confirmed and not item['reading'].is_rejected)
-
-    # Calculate average consumption
-    consumptions = [item['consumption'] for item in readings_with_data if item['consumption'] is not None and item['consumption'] > 0]
-    avg_consumption = sum(consumptions) / len(consumptions) if consumptions else 0
-
-    # Confirmed today count
-    confirmed_today_count = MeterReading.objects.filter(
-        is_confirmed=True,
-        confirmed_at__date=today
-    ).count()
-
-    context = {
-        'readings': readings_with_data,
-        'pending_readings': pending_readings,
-        'barangays': barangays,
-        'search_query': search_query,
-        'selected_barangay': selected_barangay,
-        'selected_status': selected_status,
-        'from_date': from_date,
-        'to_date': to_date,
-        'total_count': total_count,
-        'confirmed_count': confirmed_count,
-        'pending_count': pending_count,
-        'avg_consumption': avg_consumption,
-        'confirmed_today_count': confirmed_today_count,
-        'is_paginated': False,  # Add pagination support in future if needed
-    }
-
-    return render(request, 'consumers/meter_readings.html', context)
+    def get(self, request, *args, **kwargs):
+        # Check if export is requested
+        if request.GET.get('export') == 'excel':
+            return export_meter_readings_excel(request)
+        return super().get(request, *args, **kwargs)
 
 
 

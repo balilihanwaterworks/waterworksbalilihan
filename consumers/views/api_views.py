@@ -298,7 +298,7 @@ def api_submit_reading(request):
                 sc_discount = (Decimal(str(total_amount)) * Decimal('5') / Decimal('100')).quantize(Decimal('0.01'))
 
             # Create Bill automatically with ACTUAL tier breakdown (not averages)
-            Bill.objects.create(
+            bill = Bill.objects.create(
                 consumer=consumer,
                 previous_reading=prev_reading_obj,
                 current_reading=reading,
@@ -326,6 +326,10 @@ def api_submit_reading(request):
                 senior_citizen_discount=sc_discount,
                 status='Pending'
             )
+            
+            # Send SMS Bill Alert
+            from ..utils import send_bill_sms
+            send_bill_sms(bill)
 
             # Create notification for new meter reading
             from ..models import Notification
@@ -653,7 +657,7 @@ def api_confirm_reading(request, reading_id):
             sc_discount = (total * Decimal('5') / Decimal('100')).quantize(Decimal('0.01'))
 
         # Create bill
-        Bill.objects.create(
+        bill = Bill.objects.create(
             consumer=consumer,
             previous_reading=prev,
             current_reading=reading,
@@ -680,6 +684,10 @@ def api_confirm_reading(request, reading_id):
             senior_citizen_discount=sc_discount,
             status='Pending'
         )
+
+        # Send SMS Bill Alert
+        from ..utils import send_bill_sms
+        send_bill_sms(bill)
 
         # Update reading status
         reading.is_confirmed = True

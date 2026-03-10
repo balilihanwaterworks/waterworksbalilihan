@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DetailView
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from ..decorators import (
@@ -793,80 +796,76 @@ def edit_consumer(request, consumer_id):
 
 
 
-@login_required
-def consumer_list(request):
+class ConsumerListView(LoginRequiredMixin, ListView):
     """
-    Enhanced consumer list view with filtering and statistics.
+    Class-based view for the consumer list, replacing the old consumer_list function.
     """
-    from datetime import datetime
-    from django.db.models import Count
-
-    # Base queryset with optimized queries
-    consumers = Consumer.objects.select_related('barangay', 'purok', 'meter_brand').all()
-
-    # Get all barangays for filter dropdown
-    barangays = Barangay.objects.all().order_by('name')
-
-    # Apply filters
-    query = request.GET.get('q')
-    barangay_filter = request.GET.get('barangay')
-    status_filter = request.GET.get('status')
-
-    if query:
-        consumers = consumers.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(id_number__icontains=query) |
-            Q(phone_number__icontains=query)
-        )
-
-    if barangay_filter:
-        consumers = consumers.filter(barangay_id=barangay_filter)
-
-    if status_filter:
-        consumers = consumers.filter(status=status_filter)
-
-    # Calculate statistics
-    total_consumers = Consumer.objects.count()
-    connected_count = Consumer.objects.filter(status='active').count()
-    disconnected_count = Consumer.objects.filter(status='disconnected').count()
-
-    # Consumers registered this month
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-    this_month_count = Consumer.objects.filter(
-        registration_date__month=current_month,
-        registration_date__year=current_year
-    ).count()
-
-    # Pagination
-    paginator = Paginator(consumers.order_by('-created_at'), 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    context = {
-        'consumers': page_obj,
-        'barangays': barangays,
-        'total_consumers': total_consumers,
-        'connected_count': connected_count,
-        'disconnected_count': disconnected_count,
-        'this_month_count': this_month_count,
-    }
+    model = Consumer
+    template_name = 'consumers/consumer_list.html'
+    context_object_name = 'consumers'
+    paginate_by = 20
     
-    if request.headers.get('HX-Request'):
-        return render(request, 'consumers/partials/consumer_table_only.html', context)
+    def get_queryset(self):
+        # Base queryset with optimized queries
+        queryset = Consumer.objects.select_related('barangay', 'purok', 'meter_brand').order_by('-created_at')
+
+        # Apply filters
+        query = self.request.GET.get('q')
+        barangay_filter = self.request.GET.get('barangay')
+        status_filter = self.request.GET.get('status')
+
+        if query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(id_number__icontains=query) |
+                Q(phone_number__icontains=query)
+            )
+
+        if barangay_filter:
+            queryset = queryset.filter(barangay_id=barangay_filter)
+
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+            
+        return queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all barangays for filter dropdown
+        context['barangays'] = Barangay.objects.all().order_by('name')
+        
+        # Calculate statistics
+        context['total_consumers'] = Consumer.objects.count()
+        context['connected_count'] = Consumer.objects.filter(status='active').count()
+        context['disconnected_count'] = Consumer.objects.filter(status='disconnected').count()
+
+        # Consumers registered this month
+        now = datetime.now()
+        context['this_month_count'] = Consumer.objects.filter(
+            registration_date__month=now.month,
+            registration_date__year=now.year
+        ).count()
+        
+        return context
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['consumers/partials/consumer_table_only.html']
+        return [self.template_name]
+
+
+class ConsumerDetailView(LoginRequiredMixin, DetailView):
+    model = Consumer
+    template_name = 'consumers/consumer_detail.html'
+    context_object_name = 'consumer'
+    pk_url_kwarg = 'consumer_id'
     
-    return render(request, 'consumers/consumer_list.html', context)
-
-
-
-def consumer_detail(request, consumer_id):
-    consumer = get_object_or_404(Consumer, id=consumer_id)
-    latest_bills = consumer.bills.filter(status='Pending').order_by('-billing_period')[:3]
-    return render(request, 'consumers/consumer_detail.html', {
-        'consumer': consumer,
-        'latest_bills': latest_bills
-    })
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['latest_bills'] = self.object.bills.filter(status='Pending').order_by('-billing_period')[:3]
+        return context
 
 
 @login_required

@@ -239,17 +239,14 @@ def forgot_password_request(request):
         email = request.POST.get('email', '').strip()
 
         try:
-            # First see if there is a superuser account tied to this email (prioritize higher access)
+            # Only allow password reset for superuser/superadmin accounts
             user = User.objects.filter(email__iexact=email, is_superuser=True).first()
             if not user:
-                # Fallback to finding the first staff user
-                user = User.objects.filter(email__iexact=email, is_staff=True).first()
-                if not user:
-                    raise User.DoesNotExist
+                raise User.DoesNotExist
 
-            # Allow password reset for all staff accounts
-            if not user.is_staff:
-                messages.error(request, "Password reset is only available for staff accounts. Please contact your administrator.")
+            # Only superusers can reset password via email
+            if not user.is_superuser:
+                messages.error(request, "Password reset via email is only available for Superadmin accounts. Please contact your system administrator.")
                 return redirect('consumers:forgot_password')
 
             # Check if user already has a valid token
@@ -287,30 +284,21 @@ def forgot_password_request(request):
             html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
             plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
 
-            # Send email
+            # Send email via Django email backend (Gmail SMTP)
             try:
-                subject = 'Password Reset Request - Balilihan Waterworks'
-                from_email = settings.DEFAULT_FROM_EMAIL
-                to_email = user.email
-
-                # Log email attempt (for debugging)
+                from django.core.mail import send_mail
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.info(f"Attempting to send password reset email to {to_email} via Resend API")
+                logger.info(f"Sending password reset email to {user.email}")
 
-                # Send email using Resend API
-                import resend
-                resend.api_key = settings.RESEND_API_KEY
-                
-                params = {
-                    "from": from_email,
-                    "to": [to_email],
-                    "subject": subject,
-                    "html": html_message,
-                    "text": plain_message,
-                }
-                
-                resend.Emails.send(params)
+                send_mail(
+                    subject='Password Reset Request - Balilihan Waterworks',
+                    message=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    html_message=html_message,
+                    fail_silently=False,
+                )
 
                 # Log the activity
                 UserActivity.objects.create(
@@ -325,22 +313,11 @@ def forgot_password_request(request):
                 return redirect('consumers:forgot_password')
 
             except Exception as e:
-                # Log the error with detailed information
                 import logging
                 logger = logging.getLogger(__name__)
                 error_msg = str(e)
                 logger.error(f"Error sending password reset email to {user.email}: {error_msg}", exc_info=True)
-
-                # Check for common Resend configuration issues
-                if not settings.RESEND_API_KEY:
-                    logger.error("RESEND_API_KEY is not configured!")
-                    messages.error(request, "Email service is not configured. Please contact your administrator.")
-                elif "unauthorized" in error_msg.lower() or "401" in error_msg:
-                    logger.error("Resend API key is invalid or unauthorized")
-                    messages.error(request, "Email service authorization failed. Please check the API key.")
-                else:
-                    messages.error(request, f"Failed to send password reset email. Error: {error_msg[:100]}")
-
+                messages.error(request, f"Failed to send password reset email. Please contact your administrator. ({error_msg[:80]})")
                 return redirect('consumers:forgot_password')
 
         except User.DoesNotExist:
@@ -364,38 +341,32 @@ def forgot_username(request):
 
         if email:
             # For security, always claim success to prevent email enumeration
-            messages.success(request, "If an account matches that email, a recovery message has been sent.")
-            
-            # Try to find user by email
-            users = User.objects.filter(email__iexact=email, is_staff=True)
+            messages.success(request, "If a Superadmin account matches that email, a recovery message has been sent.")
+
+            # Only recover username for superuser accounts
+            users = User.objects.filter(email__iexact=email, is_superuser=True)
             if users.exists():
                 from django.core.mail import EmailMultiAlternatives
                 from django.template.loader import render_to_string
-                
+
                 usernames = [u.username for u in users]
                 recovered_usernames_str = ", ".join(usernames)
-                
-                # Send email securely instead of exposing it in UI
+
+                # Send email securely via Django email backend
                 try:
+                    from django.core.mail import send_mail
                     email_context = {'username': recovered_usernames_str}
                     html_message = render_to_string('consumers/emails/username_recovery_email.html', email_context)
                     plain_message = render_to_string('consumers/emails/username_recovery_email.txt', email_context)
-                    
-                    subject = 'Username Recovery - Balilihan Waterworks'
-                    from_email = settings.DEFAULT_FROM_EMAIL
-                    
-                    import resend
-                    resend.api_key = settings.RESEND_API_KEY
-                    
-                    params = {
-                        "from": from_email,
-                        "to": [email],
-                        "subject": subject,
-                        "html": html_message,
-                        "text": plain_message,
-                    }
-                    
-                    resend.Emails.send(params)
+
+                    send_mail(
+                        subject='Username Recovery - Balilihan Waterworks',
+                        message=plain_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        html_message=html_message,
+                        fail_silently=True,
+                    )
                 except Exception as e:
                     import logging
                     logger = logging.getLogger(__name__)
@@ -424,25 +395,25 @@ def account_recovery(request):
 
         user = None
 
-        # Try to find user by email first
+        # Only allow recovery for superuser accounts
         if email:
-            user = User.objects.filter(email__iexact=email, is_staff=True).first()
+            user = User.objects.filter(email__iexact=email, is_superuser=True).first()
             if not user:
-                messages.error(request, "No account found with that email address.")
+                messages.error(request, "No Superadmin account found with that email address.")
 
         # Try by name if email not provided or not found
         elif first_name and last_name:
             user = User.objects.filter(
                 first_name__iexact=first_name,
                 last_name__iexact=last_name,
-                is_staff=True
+                is_superuser=True
             ).first()
             if not user:
-                messages.error(request, "No account found with that name.")
+                messages.error(request, "No Superadmin account found with that name.")
         else:
             messages.error(request, "Please enter your email or full name.")
 
-        if user and user.is_staff:
+        if user and user.is_superuser:
             # Generate password reset token
             existing_token = PasswordResetToken.objects.filter(
                 user=user,
@@ -462,10 +433,10 @@ def account_recovery(request):
                 reverse('consumers:password_reset_confirm', kwargs={'token': token.token})
             )
             
-            # Send email securely instead of returning it!
-            from django.core.mail import EmailMultiAlternatives
+            # Send recovery email via Django email backend
+            from django.core.mail import send_mail
             from django.template.loader import render_to_string
-            
+
             try:
                 email_context = {
                     'username': user.username,
@@ -476,23 +447,16 @@ def account_recovery(request):
                 }
                 html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
                 plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
-                
-                subject = 'Account Recovery & Password Reset - Balilihan Waterworks'
-                from_email = settings.DEFAULT_FROM_EMAIL
-                
-                import resend
-                resend.api_key = settings.RESEND_API_KEY
-                
-                params = {
-                    "from": from_email,
-                    "to": [user.email],
-                    "subject": subject,
-                    "html": html_message,
-                    "text": plain_message,
-                }
-                
-                resend.Emails.send(params)
-                
+
+                send_mail(
+                    subject='Account Recovery & Password Reset - Balilihan Waterworks',
+                    message=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    html_message=html_message,
+                    fail_silently=True,
+                )
+
                 # Log activity
                 UserActivity.objects.create(
                     user=user,

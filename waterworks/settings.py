@@ -219,18 +219,23 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 # ============================================================================
-# EMAIL CONFIGURATION - Resend API (to bypass Render SMTP block)
+# EMAIL CONFIGURATION - Gmail SMTP (App Password)
 # ============================================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='').strip()
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='').strip()
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@balilihan-waterworks.com'
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_TIMEOUT = 10  # seconds
+
+# Resend API Key (kept for direct resend.Emails.send() calls in views)
 import resend
 RESEND_API_KEY = config('RESEND_API_KEY', default='').strip()
 resend.api_key = RESEND_API_KEY
-
-# Use Resend as the primary email method
-# Free tier: use onboarding@resend.dev; with custom domain: use noreply@balilihan-waterworks.com
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='onboarding@resend.dev')
-
-# Email timeout settings
-EMAIL_TIMEOUT = 10  # seconds
 # ============================================================================
 
 # ============================================================================

@@ -233,9 +233,9 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_TIMEOUT = 10  # seconds
 
 # Resend API Key (kept for direct resend.Emails.send() calls in views)
-import resend
 RESEND_API_KEY = config('RESEND_API_KEY', default='').strip()
-resend.api_key = RESEND_API_KEY
+# resend integration removed
+
 # ============================================================================
 
 # ============================================================================

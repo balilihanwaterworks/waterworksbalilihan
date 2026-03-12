@@ -711,11 +711,11 @@ def user_login_history(request):
     from django.db.models.functions import Coalesce
 
     # Show ALL login events (not just latest per user) so every login is tracked
-    login_events = UserLoginEvent.objects.select_related('user').prefetch_related('activities')
+    base_login_events = UserLoginEvent.objects.select_related('user').prefetch_related('activities')
 
-    # Apply filters
+    # Apply filters to base events
     if search_query:
-        login_events = login_events.filter(
+        base_login_events = base_login_events.filter(
             Q(user__username__icontains=search_query) |
             Q(user__first_name__icontains=search_query) |
             Q(user__last_name__icontains=search_query) |
@@ -723,23 +723,31 @@ def user_login_history(request):
         )
 
     if status_filter:
-        login_events = login_events.filter(status=status_filter)
+        base_login_events = base_login_events.filter(status=status_filter)
 
     if method_filter:
-        login_events = login_events.filter(login_method=method_filter)
+        base_login_events = base_login_events.filter(login_method=method_filter)
 
     if date_from:
-        login_events = login_events.filter(login_timestamp__gte=date_from)
+        base_login_events = base_login_events.filter(login_timestamp__gte=date_from)
 
     if date_to:
         from datetime import datetime
         date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
         date_to_end = date_to_obj.replace(hour=23, minute=59, second=59)
-        login_events = login_events.filter(login_timestamp__lte=date_to_end)
+        base_login_events = base_login_events.filter(login_timestamp__lte=date_to_end)
 
     if barangay_filter:
         # Filter logins where the user's staff profile is assigned to this barangay
-        login_events = login_events.filter(user__staffprofile__assigned_barangay_id=barangay_filter)
+        base_login_events = base_login_events.filter(user__staffprofile__assigned_barangay_id=barangay_filter)
+
+    # Group by user to get the latest login event ID for each
+    latest_event_ids = base_login_events.values('user').annotate(
+        max_id=Max('id')
+    ).values_list('max_id', flat=True)
+
+    # Fetch only those latest login events
+    login_events = UserLoginEvent.objects.filter(id__in=latest_event_ids).select_related('user').prefetch_related('activities')
 
     # Order by most recent
     login_events = login_events.order_by('-login_timestamp')

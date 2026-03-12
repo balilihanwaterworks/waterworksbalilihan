@@ -284,21 +284,20 @@ def forgot_password_request(request):
             html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
             plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
 
-            # Send email via Django email backend (Gmail SMTP)
+            # Send email via Resend API (bypasses Render SMTP block)
             try:
-                from django.core.mail import send_mail
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.info(f"Sending password reset email to {user.email}")
-
-                send_mail(
-                    subject='Password Reset Request - Balilihan Waterworks',
-                    message=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    html_message=html_message,
-                    fail_silently=False,
-                )
+                import resend
+                resend.api_key = settings.RESEND_API_KEY
+                
+                params = {
+                    "from": settings.DEFAULT_FROM_EMAIL,
+                    "to": [user.email],
+                    "subject": 'Password Reset Request - Balilihan Waterworks',
+                    "html": html_message,
+                    "text": plain_message,
+                }
+                
+                resend.Emails.send(params)
 
                 # Log the activity
                 UserActivity.objects.create(
@@ -352,21 +351,24 @@ def forgot_username(request):
                 usernames = [u.username for u in users]
                 recovered_usernames_str = ", ".join(usernames)
 
-                # Send email securely via Django email backend
+                # Send email securely via Resend API (bypasses Render SMTP block)
                 try:
-                    from django.core.mail import send_mail
+                    import resend
+                    resend.api_key = settings.RESEND_API_KEY
+                    
                     email_context = {'username': recovered_usernames_str}
                     html_message = render_to_string('consumers/emails/username_recovery_email.html', email_context)
                     plain_message = render_to_string('consumers/emails/username_recovery_email.txt', email_context)
 
-                    send_mail(
-                        subject='Username Recovery - Balilihan Waterworks',
-                        message=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[email],
-                        html_message=html_message,
-                        fail_silently=True,
-                    )
+                    params = {
+                        "from": settings.DEFAULT_FROM_EMAIL,
+                        "to": [email],
+                        "subject": 'Username Recovery - Balilihan Waterworks',
+                        "html": html_message,
+                        "text": plain_message,
+                    }
+                    
+                    resend.Emails.send(params)
                 except Exception as e:
                     import logging
                     logger = logging.getLogger(__name__)
@@ -433,11 +435,13 @@ def account_recovery(request):
                 reverse('consumers:password_reset_confirm', kwargs={'token': token.token})
             )
             
-            # Send recovery email via Django email backend
-            from django.core.mail import send_mail
+            # Send recovery email via Resend API (bypasses Render SMTP block)
             from django.template.loader import render_to_string
 
             try:
+                import resend
+                resend.api_key = settings.RESEND_API_KEY
+                
                 email_context = {
                     'username': user.username,
                     'reset_url': reset_url,
@@ -448,14 +452,15 @@ def account_recovery(request):
                 html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
                 plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
 
-                send_mail(
-                    subject='Account Recovery & Password Reset - Balilihan Waterworks',
-                    message=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    html_message=html_message,
-                    fail_silently=True,
-                )
+                params = {
+                    "from": settings.DEFAULT_FROM_EMAIL,
+                    "to": [user.email],
+                    "subject": 'Account Recovery & Password Reset - Balilihan Waterworks',
+                    "html": html_message,
+                    "text": plain_message,
+                }
+                
+                resend.Emails.send(params)
 
                 # Log activity
                 UserActivity.objects.create(

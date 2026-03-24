@@ -54,6 +54,7 @@ from ..models import (
     SystemSettingChangeLog, Notification
 )
 from ..forms import ConsumerForm
+from .misc_views import get_consumer_display_id
 
 
 # Helper function to authenticate API requests using session token

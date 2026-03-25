@@ -914,8 +914,16 @@ def consumer_bill(request, consumer_id):
     ).order_by('billing_period')
 
     # Get available years for filter
-    bill_years = all_bills.dates('billing_period', 'year', order='DESC')
-    available_years = [d.year for d in bill_years]
+    current_year = timezone.now().year
+    bill_years = list(all_bills.dates('billing_period', 'year', order='DESC'))
+    existing_years = [d.year for d in bill_years]
+    
+    # Define range for dropdown: earliest bill or past year, up to next year
+    min_year = min(existing_years) if existing_years else current_year
+    min_year = min(min_year, current_year - 1)
+    max_year = current_year + 1
+    
+    available_years = list(range(max_year, min_year - 1, -1))
 
     # Apply year filter - default to latest year if available
     selected_year = request.GET.get('year', '')
@@ -979,10 +987,10 @@ def consumer_bill(request, consumer_id):
     # Determine which years to show. Always ensure at least the current year shows for empty states.
     if selected_year:
         years_to_show = [int(selected_year)]
-    elif available_years:
-        years_to_show = sorted(available_years, reverse=True)
+    elif existing_years:
+        years_to_show = sorted(existing_years, reverse=True)
     else:
-        years_to_show = [datetime.now().year]
+        years_to_show = [current_year]
 
     # Build ledger cards
     ledger_cards = []

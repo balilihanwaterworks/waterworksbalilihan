@@ -71,7 +71,7 @@
                 <div class="consumer-info">
                     <div class="info-row">
                         <span><b>Name:</b> {{ entry.consumer.last_name }}, {{ entry.consumer.first_name }}{% if entry.consumer.middle_name %} {{ entry.consumer.middle_name }}{% endif %}</span>
-                        <span><b>Service No:</b> {{ entry.consumer.id_number|default:"" }}</span>
+                        <span><b>ID number:</b> {{ entry.consumer.id_number|default:"" }}</span>
                     </div>
                     <div class="info-row">
                         <span><b>Address:</b> {% if entry.consumer.purok %}{{ entry.consumer.purok.name }}, {% endif %}{{ entry.consumer.barangay.name }}</span>

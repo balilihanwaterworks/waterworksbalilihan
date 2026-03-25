@@ -200,6 +200,10 @@ def disconnected_consumers_list(request):
     # Optimize query with select_related
     consumers = Consumer.objects.filter(status='disconnected').select_related('barangay', 'purok')
     
+    # Count by usage type from the full queryset
+    residential_count = consumers.filter(usage_type='Residential').count()
+    commercial_count = consumers.filter(usage_type='Commercial').count()
+    
     # Pagination
     paginator = Paginator(consumers, 20)
     page_number = request.GET.get('page')
@@ -207,7 +211,9 @@ def disconnected_consumers_list(request):
     
     return render(request, 'consumers/consumer_list_filtered.html', {
         'title': 'Disconnected Consumers',
-        'consumers': page_obj
+        'consumers': page_obj,
+        'residential_count': residential_count,
+        'commercial_count': commercial_count,
     })
 
 

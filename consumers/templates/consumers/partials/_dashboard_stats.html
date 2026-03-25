@@ -6,7 +6,7 @@
      hx-trigger="every 60s"
      hx-swap="outerHTML">
     <!-- Connected -->
-    <a href="{% url 'consumers:connected_consumers' %}" class="group block">
+    <a href="{% url 'consumers:connected_consumers' %}?source=dashboard" class="group block">
         <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center">
@@ -21,7 +21,7 @@
     </a>
 
     <!-- Disconnected -->
-    <a href="{% url 'consumers:disconnected_consumers' %}" class="group block">
+    <a href="{% url 'consumers:disconnected_consumers' %}?source=dashboard" class="group block">
         <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-danger-100 rounded-lg flex items-center justify-center">
@@ -36,7 +36,7 @@
     </a>
 
     <!-- Delinquent -->
-    <a href="{% url 'consumers:delinquent_consumers' %}" class="group block">
+    <a href="{% url 'consumers:delinquent_consumers' %}?source=dashboard" class="group block">
         <div class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">

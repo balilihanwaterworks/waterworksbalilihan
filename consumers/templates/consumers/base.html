@@ -800,6 +800,17 @@
                extraPrefixes['{% url "consumers:consumer_management" %}'] = extraPrefixes['{% url "consumers:consumer_management" %}'].filter(p => p !== '/consumer/');
                extraPrefixes['{% url "consumers:meter_reading_overview" %}'].push('/consumer/');
             }
+            
+            // If we clicked a dashboard stat (connected/disconnected/delinquent), keep Dashboard active instead of Consumers
+            if (queryParams.get('source') === 'dashboard') {
+                const dashboardPaths = ['/connected-consumers/', '/disconnected/', '/delinquent-consumers/'];
+                extraPrefixes['{% url "consumers:consumer_management" %}'] = extraPrefixes['{% url "consumers:consumer_management" %}'].filter(p => !dashboardPaths.includes(p));
+                
+                if (!extraPrefixes['{% url "consumers:home" %}']) {
+                    extraPrefixes['{% url "consumers:home" %}'] = [];
+                }
+                extraPrefixes['{% url "consumers:home" %}'].push(...dashboardPaths);
+            }
 
             // Collect all nav links and their potential matches
             const navLinks = [];

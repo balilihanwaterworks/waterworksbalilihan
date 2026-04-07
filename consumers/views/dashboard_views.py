@@ -372,3 +372,151 @@ def dashboard_stats_partial(request):
         'annual_revenue': annual_revenue,
     }
     return render(request, 'consumers/partials/_dashboard_stats.html', context)
+
+
+@login_required
+@role_required('cashier', 'admin', 'superadmin')
+def cashier_income_dashboard(request):
+    """
+    Cashier Income Dashboard — shows total income collected per user account.
+    Accessible by cashiers, admin, and superadmin only.
+    Displays: Today | This Month | Custom Range totals per user who processed payments.
+    Helps cashiers know exactly how much cash they need to remit.
+    """
+    today = datetime.now().date()
+    current_month = today.month
+    current_year = today.year
+
+    # --- Date filter from GET params ---
+    date_from_str = request.GET.get('date_from', '')
+    date_to_str = request.GET.get('date_to', '')
+    filter_type = request.GET.get('filter', 'month')  # 'today', 'month', 'custom'
+
+    if filter_type == 'today':
+        filter_start = today
+        filter_end = today
+    elif filter_type == 'custom' and date_from_str and date_to_str:
+        try:
+            filter_start = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+            filter_end = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except ValueError:
+            filter_start = date(current_year, current_month, 1)
+            filter_end = today
+    else:
+        # Default: this month
+        filter_type = 'month'
+        filter_start = date(current_year, current_month, 1)
+        filter_end = today
+
+    # --- Get ALL users who have ever processed payments (any role) ---
+    collector_users = User.objects.filter(
+        processed_payments__isnull=False
+    ).distinct().select_related('staffprofile').order_by('first_name', 'last_name', 'username')
+
+    cashier_income_list = []
+
+    for user in collector_users:
+        # Today's total
+        today_total = Payment.objects.filter(
+            processed_by=user,
+            payment_date__date=today
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        # This month's total
+        month_total = Payment.objects.filter(
+            processed_by=user,
+            payment_date__month=current_month,
+            payment_date__year=current_year
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        # Filtered period total
+        period_total = Payment.objects.filter(
+            processed_by=user,
+            payment_date__date__gte=filter_start,
+            payment_date__date__lte=filter_end
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        # All-time total
+        alltime_total = Payment.objects.filter(
+            processed_by=user
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        # Transaction counts
+        today_count = Payment.objects.filter(
+            processed_by=user,
+            payment_date__date=today
+        ).count()
+
+        period_count = Payment.objects.filter(
+            processed_by=user,
+            payment_date__date__gte=filter_start,
+            payment_date__date__lte=filter_end
+        ).count()
+
+        # Get role display name
+        role = 'Staff'
+        try:
+            role = user.staffprofile.get_role_display()
+        except Exception:
+            if user.is_superuser:
+                role = 'Superadmin'
+
+        cashier_income_list.append({
+            'user_id': user.id,
+            'username': user.username,
+            'full_name': user.get_full_name() or user.username,
+            'role': role,
+            'today_total': today_total,
+            'today_count': today_count,
+            'month_total': month_total,
+            'period_total': period_total,
+            'period_count': period_count,
+            'alltime_total': alltime_total,
+        })
+
+    # Sort by period total descending (highest collector first)
+    cashier_income_list.sort(key=lambda x: x['period_total'], reverse=True)
+
+    # --- Overall Totals ---
+    overall_today = Payment.objects.filter(
+        payment_date__date=today
+    ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+    overall_month = Payment.objects.filter(
+        payment_date__month=current_month,
+        payment_date__year=current_year
+    ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+    overall_period = Payment.objects.filter(
+        payment_date__date__gte=filter_start,
+        payment_date__date__lte=filter_end
+    ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+    overall_alltime = Payment.objects.aggregate(
+        total=Sum('amount_paid')
+    )['total'] or Decimal('0.00')
+
+    overall_today_count = Payment.objects.filter(payment_date__date=today).count()
+    overall_period_count = Payment.objects.filter(
+        payment_date__date__gte=filter_start,
+        payment_date__date__lte=filter_end
+    ).count()
+
+    context = {
+        'cashier_income_list': cashier_income_list,
+        'overall_today': overall_today,
+        'overall_month': overall_month,
+        'overall_period': overall_period,
+        'overall_alltime': overall_alltime,
+        'overall_today_count': overall_today_count,
+        'overall_period_count': overall_period_count,
+        'today': today,
+        'current_month': current_month,
+        'current_year': current_year,
+        'filter_type': filter_type,
+        'filter_start': filter_start,
+        'filter_end': filter_end,
+        'date_from': date_from_str or filter_start.strftime('%Y-%m-%d'),
+        'date_to': date_to_str or filter_end.strftime('%Y-%m-%d'),
+    }
+    return render(request, 'consumers/cashier_income.html', context)

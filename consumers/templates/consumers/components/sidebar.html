@@ -86,6 +86,11 @@
                 <i class="bi bi-file-earmark-text-fill me-2.5 text-base" style="width: 20px;"></i>
                 <span class="font-medium">Reports</span>
             </a>
+            <a href="{% url 'consumers:cashier_income_dashboard' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-cash-stack me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Cashier Income</span>
+            </a>
         </div>
         {% endif %}
 
@@ -102,6 +107,11 @@
                class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
                 <i class="bi bi-receipt me-2.5 text-base" style="width: 20px;"></i>
                 <span class="font-medium">Transaction History</span>
+            </a>
+            <a href="{% url 'consumers:cashier_income_dashboard' %}"
+               class="nav-link-modern flex items-center text-dark-900 no-underline py-2 px-2.5 rounded-lg mb-0.5 transition-all duration-200 hover:bg-light-100 hover:text-primary-600 text-sm">
+                <i class="bi bi-cash-stack me-2.5 text-base" style="width: 20px;"></i>
+                <span class="font-medium">Income Report</span>
             </a>
         </div>
         {% endif %}

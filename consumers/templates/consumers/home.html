@@ -32,11 +32,19 @@
 
     <!-- Quick Report Generator - Compact -->
     <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
-        <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-2">
+        <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-2 flex items-center justify-between">
             <h3 class="text-white font-semibold text-sm flex items-center gap-2">
                 <i class="bi bi-file-earmark-text-fill"></i>
                 Delinquent
             </h3>
+            <!-- Quick Action: Cashier Income Report (only for cashier, admin, superadmin) -->
+            {% if user.staffprofile.role == 'cashier' or user.staffprofile.role == 'admin' or user.staffprofile.role == 'superadmin' or user.is_superuser %}
+            <a href="{% url 'consumers:cashier_income_dashboard' %}"
+               class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg transition-all duration-200">
+                <i class="bi bi-cash-coin"></i>
+                Cashier Income Report
+            </a>
+            {% endif %}
         </div>
         <div class="p-3">
             <div class="flex items-center gap-3">

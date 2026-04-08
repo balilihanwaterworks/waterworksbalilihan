@@ -1167,6 +1167,12 @@ def api_consumers(request):
                     is_confirmed=True
                 ).order_by('-reading_date', '-created_at'),
                 to_attr='latest_readings_list'
+            ),
+            # Prefetch the absolute latest reading to check its status (e.g. pending, rejected)
+            Prefetch(
+                'meter_readings',
+                queryset=MeterReading.objects.order_by('-reading_date', '-created_at'),
+                to_attr='all_recent_readings_list'
             )
         ).annotate(
             # Annotate pending bills count (1 query for all consumers)
@@ -1186,10 +1192,23 @@ def api_consumers(request):
 
         data = []
         for consumer in consumers:
-            # Get latest reading from prefetched data
+            # Get latest confirmed reading from prefetched data
             latest_reading_value = 0
             if consumer.latest_readings_list:
                 latest_reading_value = consumer.latest_readings_list[0].reading_value
+
+            # Get the exact status of the most recently submitted reading
+            current_reading_status = 'none'
+            rejection_reason = None
+            if consumer.all_recent_readings_list:
+                latest_all = consumer.all_recent_readings_list[0]
+                if latest_all.is_confirmed:
+                    current_reading_status = 'confirmed'
+                elif latest_all.is_rejected:
+                    current_reading_status = 'rejected'
+                    rejection_reason = latest_all.rejection_reason
+                else:
+                    current_reading_status = 'pending'
 
             # Append consumer data using annotated fields
             data.append({
@@ -1211,7 +1230,10 @@ def api_consumers(request):
                 'previous_reading': latest_reading_value,  # Alias for Android app compatibility
                 # Delinquent status from annotated field (no extra query!)
                 'is_delinquent': consumer.has_overdue_db,
-                'pending_bills_count': consumer.pending_bills_count_db
+                'pending_bills_count': consumer.pending_bills_count_db,
+                # Reading validation status for the mobile app
+                'current_reading_status': current_reading_status,
+                'rejection_reason': rejection_reason
             })
 
         return JsonResponse(data, safe=False)

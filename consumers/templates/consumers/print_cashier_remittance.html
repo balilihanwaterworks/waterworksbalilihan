@@ -23,7 +23,7 @@
         .info-block strong { color: #333; }
         .info-block p { font-size: 13px; color: #555; }
 
-        .summary-boxes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .summary-boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
         .box { padding: 12px; border: 1px solid #ddd; text-align: center; border-radius: 4px; }
         .box .label { font-size: 10px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 5px; }
         .box .value { font-size: 16px; font-weight: bold; color: #065f46; }
@@ -96,10 +96,6 @@
             <div class="box main">
                 <div class="label">Amount to Remit</div>
                 <div class="value">&#8369;{{ period_total|floatformat:2|intcomma }}</div>
-            </div>
-            <div class="box">
-                <div class="label">All-Time Recorded</div>
-                <div class="value">&#8369;{{ alltime_total|floatformat:2|intcomma }}</div>
             </div>
         </div>
 

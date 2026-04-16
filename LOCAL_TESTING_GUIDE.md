@@ -360,8 +360,8 @@ Before testing, verify:
 
 Once local testing is complete:
 1. All changes are already on GitHub
-2. Railway automatically deploys from GitHub
-3. Access production at: https://your-app.up.railway.app
+2. Render automatically deploys from GitHub
+3. Access production at: https://your-app.up.render.com
 
 ## 📞 Support
 

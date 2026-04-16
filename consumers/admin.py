@@ -12,10 +12,8 @@ from .models import (
 
 # NEW: Admin for User Login Events
 @admin.register(UserLoginEvent)
-class UserLoginEventAdmin(admin.ModelAdmin):
-    list_display = ['user', 'login_timestamp', 'status', 'ip_address', 'login_method']
-    list_filter = ['login_timestamp', 'user', 'status', 'login_method']
-    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'ip_address']
+class Use
+                     r__username', 'user__first_name', 'user__last_name', 'ip_address']
     ordering = ['-login_timestamp']
     readonly_fields = ['user', 'login_timestamp', 'ip_address', 'user_agent', 'login_method', 'status', 'session_key', 'logout_timestamp']
 
@@ -127,7 +125,7 @@ class MeterBrandAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
     def consumer_count(self, obj):
-        return obj.consumers.count()
+        return obj.consumer_set.count()
     consumer_count.short_description = 'Consumers'
 
 # ----------------------------

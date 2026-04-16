@@ -3,10 +3,10 @@
 Database Migration Script: SQLite to PostgreSQL
 For Balilihan Waterworks Management System
 
-This script migrates all data from SQLite to PostgreSQL on Railway.
+This script migrates all data from SQLite to PostgreSQL on Render.
 
 Usage:
-    1. First deploy to Railway and get DATABASE_URL
+    1. First deploy to Render and get DATABASE_URL
     2. Set DATABASE_URL in environment
     3. Run: python migrate_to_postgres.py
 """
@@ -81,7 +81,7 @@ def export_sqlite_data():
             natural_primary=True
         )
         print("✅ Data exported to data_backup.json")
-        print("📤 Upload this file to Railway and run import_data()")
+        print("📤 Upload this file to Render and run import_data()")
         return True
     except Exception as e:
         print(f"❌ Export failed: {e}")
@@ -90,7 +90,7 @@ def export_sqlite_data():
 def import_postgresql_data():
     """
     Import data from JSON to PostgreSQL.
-    Run this on Railway after uploading data_backup.json.
+    Run this on Render after uploading data_backup.json.
     """
     print("\n📥 Importing data to PostgreSQL...")
 
@@ -169,12 +169,12 @@ def main():
                 print("\n✅ Export complete!")
                 print("\n📋 Next steps:")
                 print("1. Push code to GitHub")
-                print("2. Deploy to Railway")
-                print("3. Upload data_backup.json to Railway")
-                print("4. Run this script again on Railway to import")
+                print("2. Deploy to Render")
+                print("3. Upload data_backup.json to Render")
+                print("4. Run this script again on Render to import")
 
     elif 'postgresql' in db_engine:
-        print("\n💡 You're connected to PostgreSQL (Railway)")
+        print("\n💡 You're connected to PostgreSQL (Render)")
 
         if not check_database_connection():
             return
@@ -198,9 +198,9 @@ def main():
             if run_migrations():
                 if import_postgresql_data():
                     verify_data()
-                    print("\n✅ All done! Your Railway app is ready!")
+                    print("\n✅ All done! Your Render app is ready!")
                     print("\n📋 Final steps:")
-                    print("1. Test login at your Railway URL")
+                    print("1. Test login at your Render URL")
                     print("2. Update Android app API base URL")
                     print("3. Test all API endpoints")
     else:

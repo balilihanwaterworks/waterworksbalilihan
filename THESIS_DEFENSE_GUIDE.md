@@ -44,7 +44,7 @@ The **Balilihan Waterworks Management System** is a comprehensive web-based appl
 - **Date Utilities:** python-dateutil 2.8.2
 
 ### Deployment
-- **Platform:** Railway.app
+- **Platform:** Render
 - **Version Control:** Git/GitHub
 - **Environment Management:** python-decouple
 
@@ -696,7 +696,7 @@ class UserLoginEvent(models.Model):
 
 ## Deployment & Scalability
 
-### Current Deployment (Railway.app)
+### Current Deployment (Render)
 
 #### Configuration Files
 
@@ -705,7 +705,7 @@ class UserLoginEvent(models.Model):
 web: gunicorn waterworks.wsgi --log-file -
 ```
 
-**2. `railway.json`**
+**2. `render.json`**
 ```json
 {
   "build": {
@@ -723,13 +723,13 @@ web: gunicorn waterworks.wsgi --log-file -
 python-3.11
 ```
 
-#### Environment Variables (Railway)
+#### Environment Variables (Render)
 ```
 DEBUG=False
 SECRET_KEY=<generated-secret>
 DATABASE_URL=postgresql://<connection-string>
-ALLOWED_HOSTS=*.up.railway.app
-CSRF_TRUSTED_ORIGINS=https://*.up.railway.app
+ALLOWED_HOSTS=*.onrender.com
+CSRF_TRUSTED_ORIGINS=https://*.onrender.com
 ```
 
 ---
@@ -738,11 +738,11 @@ CSRF_TRUSTED_ORIGINS=https://*.up.railway.app
 
 #### Horizontal Scaling
 - **Stateless Design:** Session data in database (consider Redis)
-- **Load Balancer:** Railway supports automatic load balancing
+- **Load Balancer:** Render supports automatic load balancing
 - **Database:** PostgreSQL connection pooling
 
 #### Vertical Scaling
-- **Resource Monitoring:** Railway metrics dashboard
+- **Resource Monitoring:** Render metrics dashboard
 - **Database Optimization:**
   - Query optimization
   - Proper indexing
@@ -910,9 +910,9 @@ class DashboardViewTest(TestCase):
 ### 8. Deployment & Maintenance
 **"The system is production-ready:"**
 
-- **Cloud Hosting:** Railway.app (PaaS)
+- **Cloud Hosting:** Render (PaaS)
 - **Database:** Managed PostgreSQL
-- **Monitoring:** Railway metrics dashboard
+- **Monitoring:** Render metrics dashboard
 - **Updates:** Git-based deployment workflow
 
 ### 9. Impact & Benefits
@@ -984,10 +984,10 @@ class DashboardViewTest(TestCase):
 **A:** The mobile app should implement local storage with sync when connectivity is restored. This is a future enhancement for the native mobile app version.
 
 **Q: How scalable is this system?**
-**A:** The system is designed to scale horizontally. We use stateless architecture, PostgreSQL supports sharding, and Railway provides auto-scaling. Current capacity: ~10,000 consumers with sub-200ms response times.
+**A:** The system is designed to scale horizontally. We use stateless architecture, PostgreSQL supports sharding, and Render provides auto-scaling. Current capacity: ~10,000 consumers with sub-200ms response times.
 
 **Q: What about data backup and disaster recovery?**
-**A:** Railway provides automated daily backups. For production, we recommend implementing: (1) Hourly incremental backups, (2) Off-site backup storage, (3) Tested restore procedures.
+**A:** Render provides automated daily backups. For production, we recommend implementing: (1) Hourly incremental backups, (2) Off-site backup storage, (3) Tested restore procedures.
 
 **Q: Security vulnerabilities?**
 **A:** We follow OWASP Top 10 guidelines: (1) CSRF protection, (2) SQL injection prevention via ORM, (3) XSS sanitization, (4) Secure password hashing, (5) HTTPS enforcement, (6) Role-based access control.
@@ -1019,4 +1019,4 @@ This system solves real-world problems and provides a foundation for digital tra
 **Last Updated:** 2025-01-15
 **Author:** Thesis Developer
 **System Version:** v1.0.0
-**Deployment URL:** https://waterworks-production.up.railway.app (replace with actual URL)
+**Deployment URL:** https://waterworks-rose.onrender.com (replace with actual URL)

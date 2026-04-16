@@ -128,18 +128,18 @@ Or check online:
 
 ---
 
-## 🚂 Railway Auto-Deployment
+## 🚂 Render Auto-Deployment
 
 Once pushed to GitHub:
 
-1. **Railway detects the push** (within seconds)
+1. **Render detects the push** (within seconds)
 2. **Automatically starts building**
 3. **Deploys new version** (2-3 minutes)
-4. **Changes go live** at: https://web-production-9445b.up.railway.app/
+4. **Changes go live** at: https://waterworks-rose.onrender.com/
 
-### **Check Railway Status:**
+### **Check Render Status:**
 
-1. Go to: https://railway.app/dashboard
+1. Go to: https://render.com/dashboard
 2. Find your project
 3. Check "Deployments" tab
 4. Look for "Building..." or "Success"
@@ -148,9 +148,9 @@ Once pushed to GitHub:
 
 ## 🔍 Test Your Changes
 
-After Railway finishes deploying:
+After Render finishes deploying:
 
-1. Visit: https://web-production-9445b.up.railway.app/
+1. Visit: https://waterworks-rose.onrender.com/
 2. Login with your credentials
 3. Check the sidebar - username should be on separate line!
 4. No more overlap with Logout button

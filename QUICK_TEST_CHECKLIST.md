@@ -178,7 +178,7 @@ Field Staff: Pedro Santos
 
 ## ✅ Production Checklist
 
-Before deploying to Railway.app:
+Before deploying to Render:
 
 - [ ] ✅ Test passes locally
 - [ ] ✅ All 11 fields present

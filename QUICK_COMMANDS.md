@@ -1,5 +1,5 @@
 # Quick Command Reference
-## Balilihan Waterworks Railway Deployment
+## Balilihan Waterworks Render Deployment
 
 ---
 
@@ -25,7 +25,7 @@ git init
 git add .
 
 # Commit
-git commit -m "Initial commit for Railway deployment"
+git commit -m "Initial commit for Render deployment"
 
 # Add GitHub remote (replace USERNAME)
 git remote add origin https://github.com/USERNAME/balilihan-waterworks.git
@@ -37,62 +37,62 @@ git push -u origin main
 
 ---
 
-## ☁️ Railway CLI Commands
+## ☁️ Render CLI Commands
 
-### Install Railway CLI
+### Install Render CLI
 
 **Windows (PowerShell):**
 ```powershell
-iwr https://railway.app/install.ps1 | iex
+iwr https://render.com/install.ps1 | iex
 ```
 
 **Mac/Linux:**
 ```bash
-curl -fsSL https://railway.app/install.sh | sh
+curl -fsSL https://render.com/install.sh | sh
 ```
 
 ### Login and Link
 ```bash
-# Login to Railway
-railway login
+# Login to Render
+render login
 
 # Link to your project
 cd D:\balilihan_waterworks\waterworks
-railway link
+render link
 
 # Select your project from list
 ```
 
-### Common Railway Commands
+### Common Render Commands
 ```bash
 # View logs (live)
-railway logs --tail
+render logs --tail
 
 # Access shell
-railway shell
+render shell
 
 # Deploy manually
-railway up
+render up
 
 # Check status
-railway status
+render status
 
 # View environment variables
-railway variables
+render variables
 
 # Open project in browser
-railway open
+render open
 ```
 
 ---
 
 ## 📊 Database Migration Commands
 
-### On Railway (after deployment)
+### On Render (after deployment)
 
 ```bash
-# Access Railway shell
-railway shell
+# Access Render shell
+render shell
 
 # Run migration script
 python migrate_to_postgres.py
@@ -105,7 +105,7 @@ python manage.py loaddata data_backup.json
 
 ### Create Superuser
 ```bash
-railway shell
+render shell
 python manage.py createsuperuser
 ```
 
@@ -113,9 +113,9 @@ python manage.py createsuperuser
 
 ## 🔧 Django Management Commands
 
-### On Railway
+### On Render
 ```bash
-railway shell
+render shell
 
 # Run migrations
 python manage.py migrate
@@ -138,7 +138,7 @@ python manage.py check --deploy
 
 ### Database Backup
 ```bash
-railway shell
+render shell
 
 # Full backup
 python manage.py dumpdata --indent 2 > backup.json
@@ -158,20 +158,20 @@ python manage.py dumpdata --exclude auth.permission --exclude contenttypes --ind
 
 **Login:**
 ```bash
-curl -X POST https://your-app.up.railway.app/api/login/ \
+curl -X POST https://your-app.up.render.com/api/login/ \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"testpass"}'
 ```
 
 **Get Consumers:**
 ```bash
-curl -X GET https://your-app.up.railway.app/api/consumers/ \
+curl -X GET https://your-app.up.render.com/api/consumers/ \
   -H "Cookie: sessionid=YOUR-SESSION-ID"
 ```
 
 **Submit Reading:**
 ```bash
-curl -X POST https://your-app.up.railway.app/api/submit-reading/ \
+curl -X POST https://your-app.up.render.com/api/submit-reading/ \
   -H "Content-Type: application/json" \
   -d '{
     "consumer_id": 1,
@@ -182,28 +182,28 @@ curl -X POST https://your-app.up.railway.app/api/submit-reading/ \
 
 **Get Rates:**
 ```bash
-curl -X GET https://your-app.up.railway.app/api/rates/
+curl -X GET https://your-app.up.render.com/api/rates/
 ```
 
 ---
 
 ## 🐛 Debugging Commands
 
-### View Railway Logs
+### View Render Logs
 ```bash
 # Live logs
-railway logs --tail
+render logs --tail
 
 # Last 100 lines
-railway logs --limit 100
+render logs --limit 100
 
 # Specific deployment
-railway logs --deployment DEPLOYMENT_ID
+render logs --deployment DEPLOYMENT_ID
 ```
 
-### Django Debug on Railway
+### Django Debug on Render
 ```bash
-railway shell
+render shell
 
 # Check database connection
 python manage.py dbshell
@@ -217,7 +217,7 @@ python -c "from django.conf import settings; print(settings.DATABASES)"
 
 ### PostgreSQL Commands
 ```bash
-railway shell
+render shell
 python manage.py dbshell
 
 -- List all tables
@@ -251,16 +251,16 @@ python manage.py runserver
 git add .
 git commit -m "Update: description of changes"
 
-# Push to GitHub (Railway auto-deploys)
+# Push to GitHub (Render auto-deploys)
 git push
 
 # Watch deployment
-railway logs --tail
+render logs --tail
 ```
 
 ### Rollback Deployment
 ```bash
-# In Railway dashboard:
+# In Render dashboard:
 # 1. Go to Deployments tab
 # 2. Find previous successful deployment
 # 3. Click "..." → "Redeploy"
@@ -273,16 +273,16 @@ railway logs --tail
 ### Set Variables via CLI
 ```bash
 # Set single variable
-railway variables set SECRET_KEY="your-secret-key"
+render variables set SECRET_KEY="your-secret-key"
 
 # Set multiple variables
-railway variables set DEBUG=False ALLOWED_HOSTS=".railway.app"
+render variables set DEBUG=False ALLOWED_HOSTS=".render.com"
 
 # View all variables
-railway variables
+render variables
 
 # Delete variable
-railway variables delete VARIABLE_NAME
+render variables delete VARIABLE_NAME
 ```
 
 ---
@@ -295,7 +295,7 @@ railway variables delete VARIABLE_NAME
 adb logcat | grep "WaterworksApp"
 
 # Test API from Android device
-adb shell am start -a android.intent.action.VIEW -d "https://your-app.up.railway.app/api/login/"
+adb shell am start -a android.intent.action.VIEW -d "https://your-app.up.render.com/api/login/"
 ```
 
 ---
@@ -305,17 +305,17 @@ adb shell am start -a android.intent.action.VIEW -d "https://your-app.up.railway
 ### Check App Status
 ```bash
 # Test if app is responding
-curl -I https://your-app.up.railway.app/
+curl -I https://your-app.up.render.com/
 
 # Check API endpoint
-curl https://your-app.up.railway.app/api/rates/
+curl https://your-app.up.render.com/api/rates/
 
 # Check admin
-curl https://your-app.up.railway.app/admin/
+curl https://your-app.up.render.com/admin/
 ```
 
 ### Monitor Resource Usage
-In Railway dashboard:
+In Render dashboard:
 - CPU usage
 - Memory usage
 - Network traffic
@@ -327,7 +327,7 @@ In Railway dashboard:
 
 ### Backup Database
 ```bash
-railway shell
+render shell
 
 # Create backup with timestamp
 python manage.py dumpdata \
@@ -338,7 +338,7 @@ python manage.py dumpdata \
 
 ### Restore Database
 ```bash
-railway shell
+render shell
 
 # Load data from backup
 python manage.py loaddata backup_20250115_120000.json
@@ -350,13 +350,13 @@ python manage.py loaddata backup_20250115_120000.json
 
 ### Clear Django Cache
 ```bash
-railway shell
+render shell
 python manage.py clearsessions
 ```
 
 ### Remove Old Static Files
 ```bash
-railway shell
+render shell
 python manage.py collectstatic --clear --noinput
 ```
 
@@ -366,7 +366,7 @@ python manage.py collectstatic --clear --noinput
 
 ### Get Data Counts
 ```bash
-railway shell
+render shell
 python manage.py shell
 
 # Then in Python shell:
@@ -386,17 +386,17 @@ print(f"Readings: {MeterReading.objects.count()}")
 
 ### Force Redeploy
 ```bash
-railway up --detach
+render up --detach
 ```
 
 ### Restart Service
 ```bash
-railway restart
+render restart
 ```
 
 ### Check for Migrations
 ```bash
-railway shell
+render shell
 python manage.py showmigrations
 python manage.py migrate --plan
 ```
@@ -405,11 +405,11 @@ python manage.py migrate --plan
 
 ## 📖 Help Commands
 
-### Railway Help
+### Render Help
 ```bash
-railway --help
-railway logs --help
-railway variables --help
+render --help
+render logs --help
+render variables --help
 ```
 
 ### Django Help
@@ -428,50 +428,50 @@ python manage.py collectstatic --help
 python migrate_to_postgres.py
 
 # 2. Push to GitHub
-git add . && git commit -m "Deploy to Railway" && git push
+git add . && git commit -m "Deploy to Render" && git push
 
-# 3. Set environment variables in Railway dashboard
+# 3. Set environment variables in Render dashboard
 # SECRET_KEY, DEBUG, ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS
 
 # 4. Upload and import data
-railway shell
+render shell
 python migrate_to_postgres.py  # Option 4
 
 # 5. Test deployment
-curl https://your-app.up.railway.app/
+curl https://your-app.up.render.com/
 ```
 
 ---
 
 ## 📞 Common URLs
 
-Replace `your-app-name` with your actual Railway app name:
+Replace `your-app-name` with your actual Render app name:
 
-- **Web App:** `https://your-app-name.up.railway.app/`
-- **Login:** `https://your-app-name.up.railway.app/login/`
-- **Admin:** `https://your-app-name.up.railway.app/admin/`
-- **API Login:** `https://your-app-name.up.railway.app/api/login/`
-- **API Consumers:** `https://your-app-name.up.railway.app/api/consumers/`
-- **API Submit:** `https://your-app-name.up.railway.app/api/submit-reading/`
-- **API Rates:** `https://your-app-name.up.railway.app/api/rates/`
+- **Web App:** `https://your-app-name.up.render.com/`
+- **Login:** `https://your-app-name.up.render.com/login/`
+- **Admin:** `https://your-app-name.up.render.com/admin/`
+- **API Login:** `https://your-app-name.up.render.com/api/login/`
+- **API Consumers:** `https://your-app-name.up.render.com/api/consumers/`
+- **API Submit:** `https://your-app-name.up.render.com/api/submit-reading/`
+- **API Rates:** `https://your-app-name.up.render.com/api/rates/`
 
 ---
 
 ## 💡 Pro Tips
 
-### Alias for Railway CLI
+### Alias for Render CLI
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-alias rl='railway'
-alias rll='railway logs --tail'
-alias rls='railway shell'
+alias rl='render'
+alias rll='render logs --tail'
+alias rls='render shell'
 ```
 
 ### Quick Test Script
 ```bash
 #!/bin/bash
 echo "Testing Balilihan Waterworks API..."
-BASE_URL="https://your-app-name.up.railway.app"
+BASE_URL="https://your-app-name.up.render.com"
 
 echo "1. Testing login endpoint..."
 curl -X POST $BASE_URL/api/login/ -H "Content-Type: application/json" -d '{"username":"test","password":"test"}'
@@ -489,8 +489,8 @@ echo "\nTests complete!"
 
 ## 🔗 Useful Links
 
-- **Railway Dashboard:** https://railway.app/dashboard
-- **Railway Docs:** https://docs.railway.app/
+- **Render Dashboard:** https://render.com/dashboard
+- **Render Docs:** https://docs.render.com/
 - **Django Docs:** https://docs.djangoproject.com/
 - **PostgreSQL Docs:** https://www.postgresql.org/docs/
 

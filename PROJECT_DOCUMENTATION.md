@@ -6,8 +6,8 @@
 **Framework**: Django 5.2.7
 **Frontend**: Tailwind CSS, Bootstrap Icons, Chart.js 4.4.0
 **Database**: PostgreSQL (Production) / SQLite (Development)
-**Deployment**: Railway.app
-**Production URL**: https://web-production-9445b.up.railway.app/
+**Deployment**: Render
+**Production URL**: https://waterworks-rose.onrender.com/
 
 ## Table of Contents
 
@@ -47,7 +47,7 @@ graph TB
     end
 
     subgraph "External Services"
-        RAILWAY[Railway.app Deployment]
+        RENDER[Render Deployment]
         GITHUB[GitHub Repository]
     end
 
@@ -57,8 +57,8 @@ graph TB
     VIEWS --> TEMPLATES
     VIEWS --> POSTGRES
     VIEWS --> MEDIA
-    DJANGO --> RAILWAY
-    RAILWAY --> GITHUB
+    DJANGO --> RENDER
+    RENDER --> GITHUB
 ```
 
 ### Technology Stack
@@ -84,7 +84,7 @@ graph LR
     end
 
     subgraph "Deployment"
-        J[Railway.app]
+        J[Render]
         K[Gunicorn]
         L[WhiteNoise]
     end
@@ -713,11 +713,11 @@ fetch('/get-consumer-bills/100/')
 
 ### Production Environment
 
-**Platform**: Railway.app
-**URL**: https://web-production-9445b.up.railway.app/
-**Database**: PostgreSQL (Railway-managed)
+**Platform**: Render
+**URL**: https://waterworks-rose.onrender.com/
+**Database**: PostgreSQL (Render-managed)
 **Static Files**: WhiteNoise
-**Media Files**: Railway volumes
+**Media Files**: Render volumes
 
 ### Environment Variables
 
@@ -726,14 +726,14 @@ fetch('/get-consumer-bills/100/')
 DEBUG=False
 SECRET_KEY=your-secret-key-here
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
-ALLOWED_HOSTS=web-production-9445b.up.railway.app
-CSRF_TRUSTED_ORIGINS=https://web-production-9445b.up.railway.app
+ALLOWED_HOSTS=waterworks-rose.onrender.com
+CSRF_TRUSTED_ORIGINS=https://waterworks-rose.onrender.com
 ```
 
-### Railway Configuration
+### Render Configuration
 
 ```toml
-# railway.toml
+# render.toml
 [build]
 builder = "NIXPACKS"
 buildCommand = "pip install -r requirements.txt"
@@ -834,7 +834,7 @@ waterworks/
 │   └── profile_photos/                      # User profile photos
 ├── manage.py
 ├── requirements.txt
-├── railway.toml
+├── render.toml
 └── PROJECT_DOCUMENTATION.md                 # This file
 ```
 
@@ -1337,15 +1337,15 @@ scp backup_*.sql user@backup-server:/backups/
 ## Contact & Support
 
 **Project Repository**: https://github.com/balilihanwaterworks/waterworksbalilihan
-**Production URL**: https://web-production-9445b.up.railway.app/
-**Deployment Platform**: Railway.app
+**Production URL**: https://waterworks-rose.onrender.com/
+**Deployment Platform**: Render
 
 ### Development Team
 
 - **Backend Development**: Django 5.2.7
 - **Frontend Design**: Tailwind CSS + Bootstrap Icons
 - **Database**: PostgreSQL
-- **Deployment**: Railway.app
+- **Deployment**: Render
 
 ---
 

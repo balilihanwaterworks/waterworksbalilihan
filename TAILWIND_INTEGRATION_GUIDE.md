@@ -587,8 +587,8 @@ git commit -m "Complete Tailwind CSS integration"
 git push origin main
 ```
 
-5. **Deploy to Railway:**
-Railway will automatically:
+5. **Deploy to Render:**
+Render will automatically:
 - Run `npm install` in theme directory
 - Run `npm run build`
 - Run `python manage.py collectstatic`

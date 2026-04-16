@@ -39,8 +39,8 @@ db.sqlite3-journal
 .DS_Store
 Thumbs.db
 
-# Railway
-.railway/
+# Render
+.render/
 
 # Backup files
 *.bak

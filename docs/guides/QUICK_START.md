@@ -40,9 +40,9 @@ DEFAULT_FROM_EMAIL=Balilihan Waterworks <noreply@balilihan-waterworks.com>
 
 ---
 
-### ⚡ TASK 3: Configure Railway (3 min)
+### ⚡ TASK 3: Configure Render (3 min)
 
-**Go to:** https://railway.app/ → Your Project → Variables
+**Go to:** https://render.com/ → Your Project → Variables
 
 **Add 3 variables:**
 ```
@@ -162,7 +162,7 @@ user.save()
 
 - ⬜ Gmail App Password generated (16 characters)
 - ⬜ `.env` file created with credentials
-- ⬜ Railway variables added
+- ⬜ Render variables added
 - ⬜ At least one user has email address
 - ⬜ Test email received successfully
 - ⬜ Password reset email received
@@ -175,7 +175,7 @@ user.save()
 
 **Configuration:**
 - `.env` (local) - Add email credentials
-- Railway Variables (production) - Same credentials
+- Render Variables (production) - Same credentials
 
 **Documentation:**
 - `IMPLEMENTATION_CHECKLIST.md` - Full detailed guide
@@ -220,7 +220,7 @@ docs/IMPLEMENTATION_CHECKLIST.md
 |------|------|
 | Gmail setup | 15 min |
 | Local config | 2 min |
-| Railway config | 3 min |
+| Render config | 3 min |
 | Add user emails | 5 min |
 | Testing | 5 min |
 | **Total** | **30 min** |

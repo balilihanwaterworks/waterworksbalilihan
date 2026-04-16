@@ -72,7 +72,7 @@ cd ..
 
 ## 🏗️ Production Build
 
-Before deploying to Railway:
+Before deploying to Render:
 
 ```bash
 # 1. Build minified Tailwind CSS
@@ -173,9 +173,9 @@ content: [
 
 ---
 
-## 📦 Railway Deployment
+## 📦 Render Deployment
 
-Railway automatically handles:
+Render automatically handles:
 1. ✅ Running `npm install` in theme directory
 2. ✅ Running `npm run build`
 3. ✅ Running `python manage.py collectstatic`

@@ -148,7 +148,7 @@ For more detailed information:
 2. LOCAL_TESTING_GUIDE.md   - Comprehensive testing instructions
 3. README.md                - Project overview
 4. DATABASE_DOCUMENTATION.md - Database schema details
-5. RAILWAY_DEPLOYMENT.md    - Production deployment guide
+5. RENDER_DEPLOYMENT.md    - Production deployment guide
 
 ================================================================================
   🎓 FOR THESIS DEMONSTRATION

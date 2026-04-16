@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════╗
-║   BALILIHAN WATERWORKS - RAILWAY DEPLOYMENT CHECKLIST       ║
+║   BALILIHAN WATERWORKS - RENDER DEPLOYMENT CHECKLIST       ║
 ║   Print this and check off each step as you complete it     ║
 ╚══════════════════════════════════════════════════════════════╝
 
@@ -11,11 +11,11 @@ PHASE 1: LOCAL PREPARATION
     [ ] requirements.txt
     [ ] Procfile
     [ ] runtime.txt
-    [ ] railway.json
+    [ ] render.json
     [ ] .gitignore
     [ ] .env.example
     [ ] migrate_to_postgres.py
-    [ ] RAILWAY_DEPLOYMENT_GUIDE.md
+    [ ] RENDER_DEPLOYMENT_GUIDE.md
 
 [ ] 2. Export SQLite data:
     Command: python migrate_to_postgres.py
@@ -32,7 +32,7 @@ PHASE 1: LOCAL PREPARATION
 [ ] 4. Initialize Git repository:
     [ ] git init (if not done)
     [ ] git add .
-    [ ] git commit -m "Initial commit for Railway"
+    [ ] git commit -m "Initial commit for Render"
 
 ═══════════════════════════════════════════════════════════════
 PHASE 2: GITHUB SETUP
@@ -51,16 +51,16 @@ PHASE 2: GITHUB SETUP
     [ ] Verify code appears on GitHub
 
 ═══════════════════════════════════════════════════════════════
-PHASE 3: RAILWAY SETUP
+PHASE 3: RENDER SETUP
 ═══════════════════════════════════════════════════════════════
 
-[ ] 7. Create Railway account:
-    [ ] Go to railway.app
+[ ] 7. Create Render account:
+    [ ] Go to render.com
     [ ] Sign up with GitHub
     [ ] Verify email
     [ ] Confirm $5 free credit
 
-[ ] 8. Create new Railway project:
+[ ] 8. Create new Render project:
     [ ] Click "New Project"
     [ ] Select "Deploy from GitHub repo"
     [ ] Choose balilihan-waterworks repo
@@ -78,13 +78,13 @@ PHASE 3: RAILWAY SETUP
 
     Your SECRET_KEY: ________________________________
 
-[ ] 11. Set environment variables in Railway:
+[ ] 11. Set environment variables in Render:
     Go to: Project → App → Variables tab
 
     [ ] SECRET_KEY = (paste generated key)
     [ ] DEBUG = False
-    [ ] ALLOWED_HOSTS = .railway.app,.up.railway.app
-    [ ] RAILWAY_ENVIRONMENT = production
+    [ ] ALLOWED_HOSTS = .render.com,.up.render.com
+    [ ] RENDER_ENVIRONMENT = production
 
 [ ] 12. Watch initial deployment:
     [ ] Click "Deployments" tab
@@ -103,31 +103,31 @@ PHASE 4: GET PUBLIC URL
     [ ] Test URL in browser (should see error or redirect)
 
 [ ] 14. Update environment variables with domain:
-    [ ] CORS_ALLOWED_ORIGINS = https://your-app-name.up.railway.app
-    [ ] CSRF_TRUSTED_ORIGINS = https://your-app-name.up.railway.app
+    [ ] CORS_ALLOWED_ORIGINS = https://your-app-name.up.render.com
+    [ ] CSRF_TRUSTED_ORIGINS = https://your-app-name.up.render.com
     [ ] Wait for auto-redeploy
 
 ═══════════════════════════════════════════════════════════════
 PHASE 5: DATABASE MIGRATION
 ═══════════════════════════════════════════════════════════════
 
-[ ] 15. Upload data_backup.json to Railway:
+[ ] 15. Upload data_backup.json to Render:
     Method: Temporarily commit to git
     [ ] git add data_backup.json
     [ ] git commit -m "Add data backup for migration"
     [ ] git push
-    [ ] Wait for Railway to redeploy
+    [ ] Wait for Render to redeploy
 
-[ ] 16. Install Railway CLI (optional but recommended):
-    Windows: iwr https://railway.app/install.ps1 | iex
-    [ ] railway login
-    [ ] railway link (select your project)
+[ ] 16. Install Render CLI (optional but recommended):
+    Windows: iwr https://render.com/install.ps1 | iex
+    [ ] render login
+    [ ] render link (select your project)
 
-[ ] 17. Access Railway shell:
-    Method 1: Railway CLI
-    [ ] railway shell
+[ ] 17. Access Render shell:
+    Method 1: Render CLI
+    [ ] render shell
 
-    Method 2: Railway Dashboard
+    Method 2: Render Dashboard
     [ ] Click "..." menu → Shell
 
 [ ] 18. Run migration script:
@@ -151,7 +151,7 @@ PHASE 6: TESTING
 ═══════════════════════════════════════════════════════════════
 
 [ ] 20. Test web application:
-    URL: https://your-app-name.up.railway.app
+    URL: https://your-app-name.up.render.com
 
     [ ] Login page loads
     [ ] Can login with superuser
@@ -164,7 +164,7 @@ PHASE 6: TESTING
     [ ] Can export report to Excel
 
 [ ] 21. Test Django admin:
-    URL: https://your-app-name.up.railway.app/admin/
+    URL: https://your-app-name.up.render.com/admin/
 
     [ ] Admin login works
     [ ] Can see all models
@@ -201,7 +201,7 @@ PHASE 7: ANDROID APP UPDATE
     File: LoginActivity.java (or similar)
 
     OLD: String BASE_URL = "http://192.168.1.100:8000";
-    NEW: String BASE_URL = "https://your-app-name.up.railway.app";
+    NEW: String BASE_URL = "https://your-app-name.up.render.com";
 
     [ ] Updated base URL
     [ ] Changed HTTP to HTTPS
@@ -218,8 +218,8 @@ PHASE 7: ANDROID APP UPDATE
 PHASE 8: FINAL VERIFICATION
 ═══════════════════════════════════════════════════════════════
 
-[ ] 26. Check Railway logs:
-    [ ] railway logs (or dashboard)
+[ ] 26. Check Render logs:
+    [ ] render logs (or dashboard)
     [ ] No critical errors
     [ ] Requests are being logged
     [ ] No security warnings
@@ -251,11 +251,11 @@ PHASE 9: CLEANUP & DOCUMENTATION
     [ ] git push
 
 [ ] 31. Document your deployment:
-    Your Railway URL: ________________________________
+    Your Render URL: ________________________________
 
     Deployment Date: _________________
 
-    Database: PostgreSQL (Railway)
+    Database: PostgreSQL (Render)
 
     Environment Variables Set:
     [ ] SECRET_KEY
@@ -265,7 +265,7 @@ PHASE 9: CLEANUP & DOCUMENTATION
     [ ] CSRF_TRUSTED_ORIGINS
 
 [ ] 32. Create test user account:
-    [ ] railway shell
+    [ ] render shell
     [ ] python manage.py createsuperuser
     Username: _________________
     Password: _________________
@@ -287,7 +287,7 @@ PHASE 10: THESIS DEFENSE PREPARATION
     [ ] Prepare presentation slides
 
 [ ] 35. Final system check (day before defense):
-    [ ] Railway app is running
+    [ ] Render app is running
     [ ] All features work
     [ ] Data is up-to-date
     [ ] Android app connects
@@ -297,19 +297,19 @@ PHASE 10: THESIS DEFENSE PREPARATION
 TROUBLESHOOTING CONTACTS
 ═══════════════════════════════════════════════════════════════
 
-Railway Support: https://railway.app/help
+Render Support: https://render.com/help
 Django Docs: https://docs.djangoproject.com/
-Your Documentation: See RAILWAY_DEPLOYMENT_GUIDE.md
+Your Documentation: See RENDER_DEPLOYMENT_GUIDE.md
 
 ═══════════════════════════════════════════════════════════════
 QUICK REFERENCE COMMANDS
 ═══════════════════════════════════════════════════════════════
 
 View logs:
-  railway logs --tail
+  render logs --tail
 
 Access shell:
-  railway shell
+  render shell
 
 Run migrations:
   python manage.py migrate

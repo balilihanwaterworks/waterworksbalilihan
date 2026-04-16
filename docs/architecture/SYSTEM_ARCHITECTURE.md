@@ -935,7 +935,7 @@ Web Interface:
 
 ### Deployment
 - **WSGI Server:** Gunicorn (configured)
-- **Platform:** Railway (ready)
+- **Platform:** Render (ready)
 - **Static Files:** Django collectstatic
 - **Environment:** Python virtual environment
 
@@ -949,7 +949,7 @@ Web Interface:
 
 ## Deployment Architecture
 
-### Production Deployment (Railway)
+### Production Deployment (Render)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -960,12 +960,12 @@ Web Interface:
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      RAILWAY PLATFORM                                │
+│                      RENDER PLATFORM                                │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │  ┌────────────────────────────────────────────────────────────────┐ │
 │  │               Load Balancer / Reverse Proxy                     │ │
-│  │               (Railway Infrastructure)                          │ │
+│  │               (Render Infrastructure)                          │ │
 │  └──────────────────────────┬─────────────────────────────────────┘ │
 │                             │                                        │
 │                             ▼                                        │
@@ -993,9 +993,9 @@ Web Interface:
 │                             ▼                                        │
 │  ┌────────────────────────────────────────────────────────────────┐ │
 │  │                 PostgreSQL Database                             │ │
-│  │                 (Railway Managed)                               │ │
+│  │                 (Render Managed)                               │ │
 │  │                                                                 │ │
-│  │  • Host: railway.app (internal)                                │ │
+│  │  • Host: render.com (internal)                                │ │
 │  │  • Credentials: Environment variables                           │ │
 │  │  • Backups: Automatic                                           │ │
 │  │  • Connection Pooling: Enabled                                  │ │

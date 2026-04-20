@@ -28,9 +28,10 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 if '*' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('*')
 
-# CSRF configuration for Render (HTTPS proxy)
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://waterworksbalilihan.onrender.com', cast=Csv())
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Allow the page to be framed by the same origin (needed for modals/form posts on Render)
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # Application definition
 INSTALLED_APPS = [
@@ -192,15 +193,15 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# CSRF Settings for API endpoints
-# Initialize as empty list, then add from config if provided
+# CSRF Settings - trusted origins for CSRF validation on Render
 CSRF_TRUSTED_ORIGINS = []
 _csrf_config = config('CSRF_TRUSTED_ORIGINS', default='')
 if _csrf_config:
     CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in _csrf_config.split(',') if origin.strip()])
 
-# Add Render production domain to trusted origins
+# Always trust both Render production domains
 CSRF_TRUSTED_ORIGINS.extend([
+    'https://waterworksbalilihan.onrender.com',
     'https://*.onrender.com',
 ])
 

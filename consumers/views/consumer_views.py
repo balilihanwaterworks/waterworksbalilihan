@@ -450,6 +450,7 @@ def import_consumers_csv(request):
     import csv
     import io
     from datetime import datetime as _dt
+    from django.db import transaction
 
     if request.method != 'POST':
         return redirect('consumers:consumer_list')
@@ -507,7 +508,9 @@ def import_consumers_csv(request):
         user=request.user, logout_timestamp__isnull=True, status='success'
     ).order_by('-login_timestamp').first()
 
-    for row_num, row in enumerate(reader, start=2):
+    try:
+        with transaction.atomic():
+            for row_num, row in enumerate(reader, start=2):
         # Normalise keys — strip whitespace and lowercase
         row = {k.strip().lower(): (v.strip() if v else '') for k, v in row.items()}
 
@@ -673,17 +676,26 @@ def import_consumers_csv(request):
             skipped_count += 1
             continue
 
+        # If there are any errors, rollback the transaction to prevent partial imports
+        if error_rows:
+            raise ValueError("Validation errors found in CSV.")
+
+    except ValueError:
+        # Transaction rolled back
+        created_count = 0
+
     # ---- Build result messages ----
     if created_count > 0:
         messages.success(request, f"✅ Successfully imported {created_count} consumer(s).")
-    if skipped_count > 0:
-        messages.warning(request, f"⚠️ {skipped_count} row(s) were skipped due to errors.")
+    
     if error_rows:
+        messages.error(request, "❌ Import aborted! Please ensure all required fields are completely filled and valid for all rows.")
         request.session['import_errors'] = error_rows[:50]
     else:
         # Clear previous import errors on a clean upload
         request.session.pop('import_errors', None)
-    if created_count == 0 and skipped_count == 0:
+        
+    if created_count == 0 and not error_rows:
         messages.error(request, "The CSV file appears to have no data rows.")
 
     return redirect('consumers:consumer_list')

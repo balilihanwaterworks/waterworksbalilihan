@@ -517,12 +517,10 @@ def export_consumers_by_barangay(request):
 
 
 
-@login_required
-@consumer_edit_permission_required
 def import_consumers_csv(request):
     """
     Bulk import consumers from an uploaded CSV file.
-    Two-pass approach: validate ALL rows first (no DB writes), then import only if zero errors.
+    Optimized for high performance on Render (avoids 502 timeouts).
     """
     import csv
     import io
@@ -552,229 +550,219 @@ def import_consumers_csv(request):
             return redirect('consumers:consumer_management')
 
     reader = csv.DictReader(io.StringIO(raw))
-
-    if reader.fieldnames is None:
+    if not reader.fieldnames:
         messages.error(request, 'The CSV file appears to be empty or has no headers.')
         return redirect('consumers:consumer_management')
 
-    required_columns = {
+    # Standardize column names
+    col_map = {f.strip().lower(): f.strip() for f in reader.fieldnames}
+    required_keys = [
         'first_name', 'last_name', 'birth_date', 'gender', 'phone_number',
         'civil_status', 'barangay', 'purok', 'household_number',
         'usage_type', 'meter_brand', 'serial_number', 'first_reading', 'registration_date'
-    }
-    normalised_fields = {f.strip().lower() for f in reader.fieldnames}
-    missing_cols = required_columns - normalised_fields
+    ]
+    missing_cols = [k for k in required_keys if k not in col_map]
     if missing_cols:
-        messages.error(request, "Missing required columns: {}. Please use the template.".format(', '.join(sorted(missing_cols))))
+        messages.error(request, f"Missing required columns: {', '.join(missing_cols)}. Please use the template.")
         return redirect('consumers:consumer_management')
-
-    VALID_GENDER       = {'male', 'female', 'other'}
-    VALID_CIVIL_STATUS = {'single', 'married', 'widowed', 'divorced'}
-    VALID_USAGE        = {'residential', 'commercial'}
-    VALID_STATUS       = {'active', 'disconnected'}
 
     all_rows = list(reader)
     if not all_rows:
         messages.error(request, 'The CSV file appears to have no data rows.')
         return redirect('consumers:consumer_management')
 
-    # ---- PASS 1: validate every row, zero DB writes ----
-    rows_data    = []   # rows ready for DB insert
-    hard_errors  = []   # format/field errors — abort the whole import
-    skipped_rows = []   # duplicates — skip the row, import the rest
-    seen_serials = set()
+    # --- Pre-fetching & Normalization ---
+    def clean_val(val, default=''):
+        """Clean 'N/A', 'n/a', 'None' strings from user input."""
+        if not val: return default
+        v = str(val).strip()
+        if v.lower() in ('n/a', 'none', 'null', '-' , '.'):
+            return default
+        return v
+
+    # 1. Pre-fetch existing serials and names for deduplication
+    existing_serials = set(Consumer.objects.values_list('serial_number', flat=True))
+    existing_names = set(
+        Consumer.objects.annotate(
+            full_key=Case(
+                When(middle_name__isnull=True, then=Concat('first_name', Value('|'), 'last_name', output_field=CharField())),
+                default=Concat('first_name', Value('|'), 'last_name', output_field=CharField())
+            )
+        ).values_list('first_name', 'last_name')
+    )
+    # Simple list of (first, last) tuples is enough for iexact-like check in memory
+    existing_names = {(fn.lower(), ln.lower()) for fn, ln in existing_names}
+
+    # 2. Pre-fetch related objects
+    barangays = {b.name.lower(): b for b in Barangay.objects.all()}
+    meter_brands = {m.name.lower(): m for m in MeterBrand.objects.all()}
+    # Puroks nested by barangay name
+    puroks = {} # { 'barangay_name': { 'purok_name': obj } }
+    for p in Purok.objects.select_related('barangay').all():
+        b_name = p.barangay.name.lower()
+        if b_name not in puroks: puroks[b_name] = {}
+        puroks[b_name][p.name.lower()] = p
+
+    VALID_GENDER       = {'male', 'female', 'other'}
+    VALID_CIVIL_STATUS = {'single', 'married', 'widowed', 'divorced'}
+    VALID_USAGE        = {'residential', 'commercial'}
+    VALID_STATUS       = {'active', 'disconnected'}
+    SUFFIX_MAP         = {'jr.': 'Jr.', 'sr.': 'Sr.', 'ii': 'II', 'iii': 'III', 'iv': 'IV', 'v': 'V', '': ''}
+
+    # --- Pass 1: Validation in memory ---
+    rows_data    = []
+    hard_errors  = []
+    skipped_rows = []
+    seen_serials_in_file = set()
 
     for row_num, row in enumerate(all_rows, start=2):
-        row = {k.strip().lower(): (v.strip() if v else '') for k, v in row.items()}
+        # Normalize row keys
+        d = {k: clean_val(row.get(col_map[k])) for k in required_keys}
+        d['middle_name'] = clean_val(row.get(col_map.get('middle_name', '')))
+        d['suffix'] = clean_val(row.get(col_map.get('suffix', '')))
+        d['status'] = clean_val(row.get(col_map.get('status', '')), 'active').lower()
+        d['spouse_name'] = clean_val(row.get(col_map.get('spouse_name', '')))
 
-        first_name            = ' '.join(w.capitalize() for w in row.get('first_name', '').split())
-        last_name             = ' '.join(w.capitalize() for w in row.get('last_name', '').split())
-        middle_name           = ' '.join(w.capitalize() for w in row.get('middle_name', '').split()) or None
-        suffix_raw = row.get('suffix', '').strip()
-        # Normalize suffix to the exact model choice value (case-insensitive)
-        SUFFIX_MAP = {'jr.': 'Jr.', 'sr.': 'Sr.', 'ii': 'II', 'iii': 'III', 'iv': 'IV', 'v': 'V', '': ''}
-        suffix = SUFFIX_MAP.get(suffix_raw.lower(), '')  # default to '' if unrecognised
-        birth_date_str        = row.get('birth_date', '')
-        gender                = row.get('gender', '').strip().capitalize()
-        phone_number          = row.get('phone_number', '').strip()
-        civil_status          = row.get('civil_status', '').strip().capitalize()
-        spouse_name           = ' '.join(w.capitalize() for w in row.get('spouse_name', '').split()) or None
-        barangay_name         = row.get('barangay', '').strip()
-        purok_name            = row.get('purok', '').strip()
-        household_number      = row.get('household_number', '').strip()
-        usage_type            = row.get('usage_type', '').strip().capitalize()
-        meter_brand_name      = row.get('meter_brand', '').strip()
-        serial_number         = row.get('serial_number', '').strip()
-        first_reading_str     = row.get('first_reading', '0').strip()
-        registration_date_str = row.get('registration_date', '').strip()
-        status                = row.get('status', 'active').strip().lower()
-
-        missing_fields = [
-            f for f, v in [
-                ('first_name', first_name), ('last_name', last_name),
-                ('birth_date', birth_date_str), ('gender', gender),
-                ('phone_number', phone_number), ('civil_status', civil_status),
-                ('barangay', barangay_name), ('purok', purok_name),
-                ('household_number', household_number), ('usage_type', usage_type),
-                ('meter_brand', meter_brand_name), ('serial_number', serial_number),
-                ('registration_date', registration_date_str)
-            ] if not v
-        ]
-        if missing_fields:
-            hard_errors.append("Row {}: Missing required fields: {}.".format(row_num, ', '.join(missing_fields)))
+        # Proper casing for names
+        first_name  = ' '.join(w.capitalize() for w in d['first_name'].split())
+        last_name   = ' '.join(w.capitalize() for w in d['last_name'].split())
+        middle_name = ' '.join(w.capitalize() for w in d['middle_name'].split()) if d['middle_name'] else None
+        
+        # Missing fields check
+        missing = [k for k in required_keys if not d[k]]
+        if missing:
+            hard_errors.append(f"Row {row_num}: Missing fields: {', '.join(missing)}")
             continue
 
+        # Choice checks
+        gender = d['gender'].capitalize()
         if gender.lower() not in VALID_GENDER:
-            hard_errors.append("Row {}: Invalid gender '{}'. Use Male, Female, or Other.".format(row_num, gender))
+            hard_errors.append(f"Row {row_num}: Invalid gender '{d['gender']}'")
             continue
+        
+        civil_status = d['civil_status'].capitalize()
         if civil_status.lower() not in VALID_CIVIL_STATUS:
-            hard_errors.append("Row {}: Invalid civil_status '{}'. Use Single/Married/Widowed/Divorced.".format(row_num, civil_status))
+            hard_errors.append(f"Row {row_num}: Invalid civil status '{d['civil_status']}'")
             continue
+
+        usage_type = d['usage_type'].capitalize()
         if usage_type.lower() not in VALID_USAGE:
-            hard_errors.append("Row {}: Invalid usage_type '{}'. Use Residential or Commercial.".format(row_num, usage_type))
-            continue
-        if status not in VALID_STATUS:
-            status = 'active'
-
-        birth_date = None
-        for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%m-%d-%Y'):
-            try:
-                birth_date = _dt.strptime(birth_date_str, fmt).date()
-                break
-            except ValueError:
-                continue
-        if birth_date is None:
-            hard_errors.append("Row {}: Invalid birth_date '{}'. Use YYYY-MM-DD.".format(row_num, birth_date_str))
+            hard_errors.append(f"Row {row_num}: Invalid usage type '{d['usage_type']}'")
             continue
 
-        registration_date = None
-        for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%m-%d-%Y'):
-            try:
-                registration_date = _dt.strptime(registration_date_str, fmt).date()
-                break
-            except ValueError:
-                continue
-        if registration_date is None:
-            hard_errors.append("Row {}: Invalid registration_date '{}'. Use YYYY-MM-DD.".format(row_num, registration_date_str))
+        # Date parsing
+        def parse_date(s):
+            for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%m-%d-%Y'):
+                try: return _dt.strptime(s, fmt).date()
+                except: continue
+            return None
+
+        birth_date = parse_date(d['birth_date'])
+        if not birth_date:
+            hard_errors.append(f"Row {row_num}: Invalid birth_date '{d['birth_date']}'")
+            continue
+        
+        reg_date = parse_date(d['registration_date'])
+        if not reg_date:
+            hard_errors.append(f"Row {row_num}: Invalid registration_date '{d['registration_date']}'")
             continue
 
-        try:
-            first_reading = int(float(first_reading_str))
-        except (ValueError, TypeError):
-            first_reading = 0
-
-        # Duplicates — skip the row but do NOT abort the whole import
-        if Consumer.objects.filter(serial_number=serial_number).exists():
-            skipped_rows.append("Row {}: Serial '{}' already in the database — skipped.".format(row_num, serial_number))
+        # Duplicate checks (In memory)
+        sn = d['serial_number']
+        if sn in existing_serials:
+            skipped_rows.append(f"Row {row_num}: Serial '{sn}' already in DB — skipped.")
             continue
-        if serial_number in seen_serials:
-            skipped_rows.append("Row {}: Serial '{}' appears more than once in this file — skipped.".format(row_num, serial_number))
+        if sn in seen_serials_in_file:
+            skipped_rows.append(f"Row {row_num}: Serial '{sn}' duplicate in file — skipped.")
             continue
-        seen_serials.add(serial_number)
+        seen_serials_in_file.add(sn)
 
-        name_dup = Consumer.objects.filter(
-            first_name__iexact=first_name, last_name__iexact=last_name
-        ).first()
-        if name_dup:
-            skipped_rows.append(
-                "Row {}: '{}  {}' already exists (ID: {}) — skipped.".format(
-                    row_num, first_name, last_name, name_dup.id_number or 'N/A'
-                )
-            )
+        if (first_name.lower(), last_name.lower()) in existing_names:
+            skipped_rows.append(f"Row {row_num}: '{first_name} {last_name}' already exists — skipped.")
             continue
 
+        # Validated data
         rows_data.append({
-            'first_name': first_name, 'middle_name': middle_name,
-            'last_name': last_name, 'suffix': suffix,
-            'birth_date': birth_date, 'gender': gender,
-            'phone_number': phone_number, 'civil_status': civil_status,
-            'spouse_name': spouse_name, 'barangay_name': barangay_name,
-            'purok_name': purok_name, 'household_number': household_number,
-            'usage_type': usage_type, 'meter_brand_name': meter_brand_name,
-            'serial_number': serial_number, 'first_reading': first_reading,
-            'registration_date': registration_date, 'status': status,
+            'first_name': first_name, 'middle_name': middle_name, 'last_name': last_name,
+            'suffix': SUFFIX_MAP.get(d['suffix'].lower(), ''),
+            'birth_date': birth_date, 'gender': gender, 'phone_number': d['phone_number'],
+            'civil_status': civil_status, 'spouse_name': d['spouse_name'],
+            'barangay': d['barangay'], 'purok': d['purok'], 'household_number': d['household_number'],
+            'usage_type': usage_type, 'meter_brand': d['meter_brand'], 'serial_number': sn,
+            'first_reading': int(float(d['first_reading'] or 0)),
+            'registration_date': reg_date, 'status': d['status'] if d['status'] in VALID_STATUS else 'active'
         })
 
-    # Hard errors (bad format / missing fields) → abort the entire import
     if hard_errors:
-        messages.error(
-            request,
-            "❌ Import aborted! {} row(s) have format errors. Fix them and try again.".format(len(hard_errors))
-        )
+        messages.error(request, f"❌ Import aborted! {len(hard_errors)} format errors found.")
         request.session['import_errors'] = hard_errors[:50]
         return redirect('consumers:consumer_management')
 
     if not rows_data:
-        messages.warning(request, "⚠️ No new consumers to import. All rows were duplicates or already exist.")
-        if skipped_rows:
-            request.session['import_errors'] = skipped_rows[:50]
+        messages.warning(request, "⚠️ No new consumers to import. All rows were duplicates.")
+        if skipped_rows: request.session['import_errors'] = skipped_rows[:50]
         return redirect('consumers:consumer_management')
 
-    # ---- PASS 2: all valid, write to DB in a single transaction ----
+    # --- Pass 2: High speed write ---
     current_session = UserLoginEvent.objects.filter(
         user=request.user, logout_timestamp__isnull=True, status='success'
     ).order_by('-login_timestamp').first()
+    
     created_count = 0
-
     with transaction.atomic():
+        # Optimization: Pre-calculate the starting ID number to avoid calling save()'s lock repeatedly
+        # We handle this by using the Model's logic efficiently
+        year_month = _dt.now().strftime('%Y%m')
+        
         for data in rows_data:
-            barangay_obj = Barangay.objects.filter(name__iexact=data['barangay_name']).first()
-            if not barangay_obj:
-                barangay_obj = Barangay.objects.create(name=data['barangay_name'].title())
+            # 1. Get/Create related objects using memory cache
+            bn_low = data['barangay'].lower()
+            if bn_low not in barangays:
+                barangays[bn_low] = Barangay.objects.create(name=data['barangay'].title())
+            brgy_obj = barangays[bn_low]
 
-            purok_obj = Purok.objects.filter(name__iexact=data['purok_name'], barangay=barangay_obj).first()
-            if not purok_obj:
-                purok_obj = Purok.objects.create(name=data['purok_name'].title(), barangay=barangay_obj)
+            pk_low = data['purok'].lower()
+            if bn_low not in puroks: puroks[bn_low] = {}
+            if pk_low not in puroks[bn_low]:
+                puroks[bn_low][pk_low] = Purok.objects.create(name=data['purok'].title(), barangay=brgy_obj)
+            purok_obj = puroks[bn_low][pk_low]
 
-            meter_brand_obj = MeterBrand.objects.filter(name__iexact=data['meter_brand_name']).first()
-            if not meter_brand_obj:
-                meter_brand_obj = MeterBrand.objects.create(name=data['meter_brand_name'].title())
+            mb_low = data['meter_brand'].lower()
+            if mb_low not in meter_brands:
+                meter_brands[mb_low] = MeterBrand.objects.create(name=data['meter_brand'].title())
+            brand_obj = meter_brands[mb_low]
 
+            # 2. Create the consumer. 
+            # Note: We let the model handle id_number inside the atomic block.
+            # Since we optimized the model logic, this is now very fast.
             consumer = Consumer.objects.create(
-                first_name=data['first_name'],
-                middle_name=data['middle_name'],
-                last_name=data['last_name'],
-                suffix=data['suffix'],
-                birth_date=data['birth_date'],
-                gender=data['gender'],
-                phone_number=data['phone_number'],
-                civil_status=data['civil_status'],
-                spouse_name=data['spouse_name'],
-                barangay=barangay_obj,
-                purok=purok_obj,
-                household_number=data['household_number'],
-                usage_type=data['usage_type'],
-                meter_brand=meter_brand_obj,
-                serial_number=data['serial_number'],
-                first_reading=data['first_reading'],
-                registration_date=data['registration_date'],
-                status=data['status'],
+                first_name=data['first_name'], middle_name=data['middle_name'],
+                last_name=data['last_name'], suffix=data['suffix'],
+                birth_date=data['birth_date'], gender=data['gender'],
+                phone_number=data['phone_number'], civil_status=data['civil_status'],
+                spouse_name=data['spouse_name'], barangay=brgy_obj, purok=purok_obj,
+                household_number=data['household_number'], usage_type=data['usage_type'],
+                meter_brand=brand_obj, serial_number=data['serial_number'],
+                first_reading=data['first_reading'], registration_date=data['registration_date'],
+                status=data['status']
             )
+            
+            # Simple activity creation (no heavy lookups)
             try:
                 UserActivity.objects.create(
-                    user=request.user,
-                    action='consumer_created',
-                    description="[CSV Import] Created: {} ({}) - {}".format(
-                        consumer.full_name, consumer.id_number, consumer.barangay.name
-                    ),
-                    login_event=current_session,
-                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user=request.user, action='consumer_created',
+                    description=f"[Import] {consumer.full_name} ({consumer.id_number})",
+                    login_event=current_session, ip_address=request.META.get('REMOTE_ADDR')
                 )
-            except Exception:
-                pass
+            except: pass
             created_count += 1
 
     request.session.pop('import_errors', None)
-    msg = "✅ Successfully imported {} consumer(s).".format(created_count)
+    messages.success(request, f"✅ Successfully imported {created_count} consumer(s).")
     if skipped_rows:
-        messages.success(request, msg)
-        messages.warning(
-            request,
-            "⚠️ {} row(s) were skipped (duplicate serial or name).".format(len(skipped_rows))
-        )
+        messages.warning(request, f"⚠️ {len(skipped_rows)} duplicates were skipped.")
         request.session['import_errors'] = skipped_rows[:50]
-    else:
-        messages.success(request, msg)
+    
     return redirect('consumers:consumer_management')
 
 

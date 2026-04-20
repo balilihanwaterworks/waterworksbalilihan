@@ -52,10 +52,13 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
+                <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                     <i class="bi bi-search"></i>Search
                 </button>
-                <a href="{% url 'consumers:consumer_management' %}" class="px-4 py-2 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 border border-light-300">
+                <a href="?search={{ search_query }}&barangay={{ barangay_filter }}&export=csv" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 shadow-sm" title="Download Filtered Data (CSV)">
+                    <i class="bi bi-download"></i>Export
+                </a>
+                <a href="{% url 'consumers:consumer_management' %}" class="px-4 py-2 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 border border-light-300 shadow-sm" title="Reset Filters">
                     <i class="bi bi-arrow-clockwise"></i>Reset
                 </a>
             </div>

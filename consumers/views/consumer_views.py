@@ -13,7 +13,10 @@ from ..decorators import (
     billing_permission_required, reports_permission_required, view_only_for_admin,
     rate_limit_login, role_required
 )
-from django.db.models import Q, Max, Count, Sum, OuterRef, Subquery, Value, F
+from django.db.models import (
+    Q, Max, Count, Sum, OuterRef, Subquery, Value, F,
+    Case, When, CharField
+)
 from django.db.models.functions import Concat, TruncMonth
 from django.db import models
 from django.http import JsonResponse, HttpResponse
@@ -517,6 +520,8 @@ def export_consumers_by_barangay(request):
 
 
 
+@login_required
+@consumer_edit_permission_required
 def import_consumers_csv(request):
     """
     Bulk import consumers from an uploaded CSV file.
@@ -582,16 +587,9 @@ def import_consumers_csv(request):
 
     # 1. Pre-fetch existing serials and names for deduplication
     existing_serials = set(Consumer.objects.values_list('serial_number', flat=True))
-    existing_names = set(
-        Consumer.objects.annotate(
-            full_key=Case(
-                When(middle_name__isnull=True, then=Concat('first_name', Value('|'), 'last_name', output_field=CharField())),
-                default=Concat('first_name', Value('|'), 'last_name', output_field=CharField())
-            )
-        ).values_list('first_name', 'last_name')
-    )
-    # Simple list of (first, last) tuples is enough for iexact-like check in memory
-    existing_names = {(fn.lower(), ln.lower()) for fn, ln in existing_names}
+    # Simple list of (first, last) tuples for memory check
+    existing_names = set(Consumer.objects.values_list('first_name', 'last_name'))
+    existing_names = {(fn.lower().strip(), ln.lower().strip()) for fn, ln in existing_names if fn and ln}
 
     # 2. Pre-fetch related objects
     barangays = {b.name.lower(): b for b in Barangay.objects.all()}

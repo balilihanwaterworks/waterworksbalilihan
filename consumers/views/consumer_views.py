@@ -380,53 +380,6 @@ def consumer_management(request):
     if barangay_filter:
         consumers = consumers.filter(barangay__id=barangay_filter)
 
-    # Handle CSV Export
-    if request.GET.get('export') == 'csv':
-        import csv
-        from django.http import HttpResponse
-
-        response = HttpResponse(content_type='text/csv')
-        filename = "consumers_export.csv"
-        if barangay_filter:
-            brgy = Barangay.objects.filter(id=barangay_filter).first()
-            if brgy:
-                filename = f"consumers_export_{brgy.name.replace(' ', '_')}.csv"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-        writer = csv.writer(response)
-        writer.writerow([
-            'first_name', 'middle_name', 'last_name', 'suffix',
-            'birth_date', 'gender', 'phone_number',
-            'civil_status', 'spouse_name',
-            'barangay', 'purok', 'household_number',
-            'usage_type', 'meter_brand', 'serial_number',
-            'first_reading', 'registration_date', 'status'
-        ])
-
-        for c in consumers:
-            writer.writerow([
-                c.first_name,
-                c.middle_name or '',
-                c.last_name,
-                c.suffix or '',
-                c.birth_date.strftime('%Y-%m-%d') if c.birth_date else '',
-                c.gender,
-                c.phone_number or '',
-                c.civil_status,
-                c.spouse_name or '',
-                c.barangay.name if c.barangay else '',
-                c.purok.name if c.purok else '',
-                c.household_number or '',
-                c.usage_type,
-                c.meter_brand.name if c.meter_brand else '',
-                c.serial_number or '',
-                c.first_reading or '0',
-                c.registration_date.strftime('%Y-%m-%d') if c.registration_date else '',
-                c.status
-            ])
-
-        return response
-
     # Always pass a fresh form for the modal
     form = ConsumerForm()
 
@@ -480,6 +433,74 @@ def download_consumer_template(request):
     ])
     return response
 
+
+@login_required
+def export_consumers_by_barangay(request):
+    """
+    Exports consumer data filtered by barangay as a CSV file.
+    The columns match exactly the consumer import template format so the file
+    can be re-imported after edits.
+
+    GET params:
+        barangay_id  – (optional) ID of the Barangay to filter by.
+                       If empty / 0, exports ALL consumers.
+    """
+    import csv as _csv
+    from django.http import HttpResponse as _HR
+
+    barangay_id = request.GET.get('barangay_id', '').strip()
+
+    consumers_qs = Consumer.objects.select_related(
+        'barangay', 'purok', 'meter_brand'
+    ).order_by('barangay__name', 'last_name', 'first_name')
+
+    if barangay_id:
+        consumers_qs = consumers_qs.filter(barangay__id=barangay_id)
+        try:
+            brgy_name = Barangay.objects.get(id=barangay_id).name
+            filename = f"consumers_{brgy_name.replace(' ', '_')}.csv"
+        except Barangay.DoesNotExist:
+            filename = "consumers_export.csv"
+    else:
+        filename = "consumers_all_barangays.csv"
+
+    response = _HR(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    writer = _csv.writer(response)
+    # ---- Header row (same columns as the import template) ----
+    writer.writerow([
+        'first_name', 'middle_name', 'last_name', 'suffix',
+        'birth_date', 'gender', 'phone_number',
+        'civil_status', 'spouse_name',
+        'barangay', 'purok', 'household_number',
+        'usage_type', 'meter_brand', 'serial_number',
+        'first_reading', 'registration_date', 'status'
+    ])
+
+    for c in consumers_qs:
+        writer.writerow([
+            c.first_name or '',
+            c.middle_name or '',
+            c.last_name or '',
+            c.suffix or '',
+            c.birth_date.strftime('%Y-%m-%d') if c.birth_date else '',
+            c.gender or '',
+            c.phone_number or '',
+            c.civil_status or '',
+            c.spouse_name or '',
+            c.barangay.name if c.barangay else '',
+            c.purok.name if c.purok else '',
+            c.household_number or '',
+            c.usage_type or '',
+            c.meter_brand.name if c.meter_brand else '',
+            c.serial_number or '',
+            c.first_reading if c.first_reading is not None else '',
+            c.registration_date.strftime('%Y-%m-%d') if c.registration_date else '',
+            c.status or 'active',
+        ])
+
+    return response
 
 
 @login_required

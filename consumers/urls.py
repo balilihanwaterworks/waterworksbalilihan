@@ -34,6 +34,7 @@ urlpatterns = [
     path('consumer/<int:consumer_id>/bills/', views.consumer_bill, name='consumer_bill'),
     path('consumer/import/', views.import_consumers_csv, name='import_consumers_csv'),
     path('consumer/import/template/', views.download_consumer_template, name='download_consumer_template'),
+    path('consumer/export/', views.export_consumers_by_barangay, name='export_consumers_by_barangay'),
 
     # Meter Readings
     path('meter-reading-overview/', views.meter_reading_overview, name='meter_reading_overview'),

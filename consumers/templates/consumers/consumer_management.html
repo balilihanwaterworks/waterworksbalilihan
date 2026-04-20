@@ -14,6 +14,12 @@
                class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm">
                 <i class="bi bi-file-earmark-arrow-up-fill"></i>Import CSV
             </button>
+            {% endif %}
+            <button onclick="document.getElementById('exportCsvModal').classList.remove('hidden')"
+               class="px-4 py-2 bg-info-600 hover:bg-info-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i>Export CSV
+            </button>
+            {% if user.is_superuser %}
             <a href="{% url 'consumers:add_consumer' %}" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm">
                 <i class="bi bi-plus-circle"></i>Add Consumer
             </a>
@@ -52,13 +58,10 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
                     <i class="bi bi-search"></i>Search
                 </button>
-                <a href="?search={{ search_query }}&barangay={{ barangay_filter }}&export=csv" class="px-4 py-2 bg-success-600 hover:bg-success-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 shadow-sm" title="Download Filtered Data (CSV)">
-                    <i class="bi bi-download"></i>Export
-                </a>
-                <a href="{% url 'consumers:consumer_management' %}" class="px-4 py-2 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 border border-light-300 shadow-sm" title="Reset Filters">
+                <a href="{% url 'consumers:consumer_management' %}" class="px-4 py-2 bg-light-100 hover:bg-light-200 text-dark-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 border border-light-300">
                     <i class="bi bi-arrow-clockwise"></i>Reset
                 </a>
             </div>
@@ -210,6 +213,22 @@ document.addEventListener('DOMContentLoaded', function() {
 function closeImportModal() {
     document.getElementById('importCsvModal').classList.add('hidden');
 }
+
+function closeExportModal() {
+    document.getElementById('exportCsvModal').classList.add('hidden');
+}
+
+function doExport() {
+    const barangayId = document.getElementById('exportBarangaySelect').value;
+    const url = new URL('{% url "consumers:export_consumers_by_barangay" %}', window.location.origin);
+    if (barangayId) {
+        url.searchParams.set('barangay_id', barangayId);
+    }
+    // Trigger download by navigating – the view returns a file attachment
+    window.location.href = url.toString();
+    // Close the modal after a short delay
+    setTimeout(closeExportModal, 500);
+}
 </script>
 
 <!-- Import CSV Modal -->
@@ -284,4 +303,60 @@ function closeImportModal() {
         </div>
     </div>
 </div>
+
+<!-- Export CSV by Barangay Modal -->
+<div id="exportCsvModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-5 py-3 bg-info-600 rounded-t-xl">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                Export Consumers as CSV
+            </h3>
+            <button onclick="closeExportModal()" class="text-white hover:text-info-200">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-5 py-4">
+            <!-- Info -->
+            <div class="mb-4 p-3 bg-info-50 border-l-4 border-info-500 rounded">
+                <p class="text-xs text-info-700">
+                    <i class="bi bi-info-circle-fill mr-1"></i>
+                    The exported file uses the <strong>same column format</strong> as the import template, so it can be edited and re-imported.
+                </p>
+            </div>
+
+            <!-- Barangay Selector -->
+            <div class="mb-5">
+                <label for="exportBarangaySelect" class="block text-xs font-semibold text-dark-700 mb-2">
+                    Select Barangay
+                </label>
+                <select id="exportBarangaySelect"
+                        class="w-full px-3 py-2 text-sm border border-light-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500">
+                    <option value="">— All Barangays —</option>
+                    {% for brgy in barangays %}
+                    <option value="{{ brgy.id }}">{{ brgy.name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="mt-1 text-xs text-dark-400">Leave as "All Barangays" to download every consumer record.</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-2">
+                <button type="button" onclick="closeExportModal()"
+                        class="px-4 py-2 text-sm font-medium text-dark-700 bg-light-100 hover:bg-light-200 rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="doExport()"
+                        class="px-4 py-2 text-sm font-semibold text-white bg-info-600 hover:bg-info-700 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="bi bi-download"></i>
+                    Download CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
+

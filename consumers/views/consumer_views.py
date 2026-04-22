@@ -740,11 +740,21 @@ def import_consumers_csv(request):
     ).order_by('-login_timestamp').first()
     
     created_count = 0
+    # Pre-calculate starting sequence for ID number to avoid database lock per row
+    year_month = _dt.now().strftime('%Y%m')
+    last_consumer = Consumer.objects.filter(id_number__startswith=year_month).order_by('-id_number').first()
+    current_seq = 0
+    if last_consumer and last_consumer.id_number:
+        try:
+            current_seq = int(last_consumer.id_number[-4:])
+        except:
+            pass
+
+    new_consumers = []
+    new_activities = []
+    ip_addr = request.META.get('REMOTE_ADDR')
+
     with transaction.atomic():
-        # Optimization: Pre-calculate the starting ID number to avoid calling save()'s lock repeatedly
-        # We handle this by using the Model's logic efficiently
-        year_month = _dt.now().strftime('%Y%m')
-        
         for data in rows_data:
             # 1. Get/Create related objects using memory cache
             bn_low = data['barangay'].lower()
@@ -763,10 +773,15 @@ def import_consumers_csv(request):
                 meter_brands[mb_low] = MeterBrand.objects.create(name=data['meter_brand'].title())
             brand_obj = meter_brands[mb_low]
 
-            # 2. Create the consumer. 
-            # Note: We let the model handle id_number inside the atomic block.
-            # Since we optimized the model logic, this is now very fast.
-            consumer = Consumer.objects.create(
+            # Generate Sequential ID Number in memory magically
+            current_seq += 1
+            if current_seq > 9999:
+                messages.error(request, f"ID number limit reached for prefix {year_month} (max 9999)")
+                return redirect('consumers:consumer_management')
+            new_id_number = f"{year_month}{current_seq:04d}"
+
+            # 2. Build the consumer object in memory (NO query triggered here)
+            new_consumer = Consumer(
                 first_name=data['first_name'], middle_name=data['middle_name'],
                 last_name=data['last_name'], suffix=data['suffix'],
                 birth_date=data['birth_date'], gender=data['gender'],
@@ -775,18 +790,27 @@ def import_consumers_csv(request):
                 household_number=data['household_number'], usage_type=data['usage_type'],
                 meter_brand=brand_obj, serial_number=data['serial_number'],
                 first_reading=data['first_reading'], registration_date=data['registration_date'],
-                status=data['status']
+                status=data['status'], id_number=new_id_number
             )
+            new_consumers.append(new_consumer)
             
-            # Simple activity creation (no heavy lookups)
-            try:
-                UserActivity.objects.create(
-                    user=request.user, action='consumer_created',
-                    description=f"[Import] {consumer.full_name} ({consumer.id_number})",
-                    login_event=current_session, ip_address=request.META.get('REMOTE_ADDR')
-                )
-            except: pass
+            # Simple activity creation payload
+            middle_str = f" {data['middle_name']}" if data['middle_name'] else ""
+            suffix_str = f" {data['suffix']}" if data['suffix'] else ""
+            full_name = f"{data['first_name']}{middle_str} {data['last_name']}{suffix_str}".strip()
+
+            new_activities.append(UserActivity(
+                user=request.user, action='consumer_created',
+                description=f"[Import] {full_name} ({new_id_number})",
+                login_event=current_session, ip_address=ip_addr
+            ))
             created_count += 1
+
+        # 3. Fire all inserts at once! (Takes <0.5 seconds for 1000s of rows)
+        if new_consumers:
+            Consumer.objects.bulk_create(new_consumers, batch_size=500)
+        if new_activities:
+            UserActivity.objects.bulk_create(new_activities, batch_size=500)
 
     request.session.pop('import_errors', None)
     messages.success(request, f"✅ Successfully imported {created_count} consumer(s).")

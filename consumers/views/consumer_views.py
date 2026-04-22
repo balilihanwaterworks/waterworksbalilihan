@@ -660,9 +660,9 @@ def import_consumers_csv(request):
             continue
 
         # Fill defaults for optional but missing fields (like N/A phone/purok/household)
-        if not d['phone_number']: d['phone_number'] = 'n/a'
+        if not d['phone_number']: d['phone_number'] = 'N/A'
         if not d['household_number']: d['household_number'] = '0'
-        if not d['purok']: d['purok'] = 'n/a'
+        if not d['purok']: d['purok'] = 'N/A'
         if not d['meter_brand']: d['meter_brand'] = 'Generic'
 
         # Choice checks

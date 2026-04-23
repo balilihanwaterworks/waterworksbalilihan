@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,43 +106,62 @@
         .slip-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            border-bottom: 2.5px solid #111;
+            justify-content: space-between;
+            gap: 15px;
+            border-bottom: 2px solid #003366;
             padding-bottom: 4mm;
             margin-bottom: 5mm;
         }
-        .org-logo {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 2.5px solid #1a3c5e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: #1a3c5e;
+        .logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
             flex-shrink: 0;
         }
-        .org-info { flex: 1; }
-        .org-name {
-            font-size: 11.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #1a3c5e;
+        .logo--circle {
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #003366;
         }
-        .org-sub { font-size: 10px; color: #666; font-style: italic; }
-
-        .notice-title-block { text-align: right; }
-        .notice-title {
-            font-size: 18px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            line-height: 1.15;
-            color: #111;
+        .header-text {
+            flex: 1;
+            text-align: center;
+            padding: 0 10px;
         }
-        .notice-ref { font-size: 9.5px; color: #888; font-style: italic; margin-top: 2px; }
+        .header-text p {
+            margin: 2px 0;
+            line-height: 1.2;
+        }
+        .header-text .republic {
+            font-size: 10px;
+            font-weight: bold;
+            color: #003366;
+        }
+        .header-text .province,
+        .header-text .municipality {
+            font-size: 9px;
+            font-weight: 600;
+            color: #0055aa;
+        }
+        .header-text .waterworks {
+            font-size: 12px;
+            font-weight: bold;
+            color: #003366;
+            margin-top: 2px;
+        }
+        .header-text .report-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+        .header-text .report-period {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+            font-style: italic;
+        }
 
         /* ── Field Rows ── */
         .fields {
@@ -268,15 +287,16 @@
         <!-- ═══════════════ SLIP 1 (Office Copy) ═══════════════ -->
         <div class="slip">
             <div class="slip-header">
-                <div class="org-logo">💧</div>
-                <div class="org-info">
-                    <div class="org-name">Balilihan Waterworks</div>
-                    <div class="org-sub">Balilihan, Bohol &nbsp;|&nbsp; Water Services</div>
+                <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Logo" class="logo">
+                <div class="header-text">
+                    <p class="republic">REPUBLIC OF THE PHILIPPINES</p>
+                    <p class="province">PROVINCE OF BOHOL</p>
+                    <p class="municipality">Balilihan, 6342, Bohol</p>
+                    <p class="waterworks">BALILIHAN WATERWORKS</p>
+                    <p class="report-title">Notice of Water Disconnection</p>
+                    <p class="report-period">Office Copy &nbsp;|&nbsp; Ref: {{ consumer.id_number }}</p>
                 </div>
-                <div class="notice-title-block">
-                    <div class="notice-title">Notice of Water<br>Disconnection</div>
-                    <div class="notice-ref">Office Copy &nbsp;|&nbsp; Ref: {{ consumer.id_number }}</div>
-                </div>
+                <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="logo logo--circle">
             </div>
 
             <div class="fields">
@@ -338,15 +358,16 @@
         <!-- ═══════════════ SLIP 2 (Consumer Copy) ═══════════════ -->
         <div class="slip">
             <div class="slip-header">
-                <div class="org-logo">💧</div>
-                <div class="org-info">
-                    <div class="org-name">Balilihan Waterworks</div>
-                    <div class="org-sub">Balilihan, Bohol &nbsp;|&nbsp; Water Services</div>
+                <img src="{% static 'consumers/images/municipal.jpg' %}" alt="Municipal Logo" class="logo">
+                <div class="header-text">
+                    <p class="republic">REPUBLIC OF THE PHILIPPINES</p>
+                    <p class="province">PROVINCE OF BOHOL</p>
+                    <p class="municipality">Balilihan, 6342, Bohol</p>
+                    <p class="waterworks">BALILIHAN WATERWORKS</p>
+                    <p class="report-title">Notice of Water Disconnection</p>
+                    <p class="report-period">Consumer Copy &nbsp;|&nbsp; Ref: {{ consumer.id_number }}</p>
                 </div>
-                <div class="notice-title-block">
-                    <div class="notice-title">Notice of Water<br>Disconnection</div>
-                    <div class="notice-ref">Consumer Copy &nbsp;|&nbsp; Ref: {{ consumer.id_number }}</div>
-                </div>
+                <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="logo logo--circle">
             </div>
 
             <div class="fields">

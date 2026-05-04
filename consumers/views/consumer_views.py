@@ -674,64 +674,68 @@ def import_consumers_csv(request):
     for row_num, row in enumerate(all_rows, start=2):
         # Map values safely (handle missing columns in d)
         d = {k: (clean_val(row.get(col_map[k])) if col_map[k] else '') for k in expected_keys}
-        
-        # Override defaults for specific fields if they are completely empty
-        if not d['status']: d['status'] = 'active'
+
+        # ── Skip completely blank rows (Excel often appends empty rows when saving CSV) ──
+        if not any(d.values()):
+            continue
+
+        # ── Apply lenient defaults so incomplete rows can still be imported ──
+        # Staff can edit/update any missing info after import via the consumer edit screen.
+        if not d['status']:            d['status']            = 'active'
+        if not d['phone_number']:      d['phone_number']      = 'N/A'
+        if not d['household_number']:  d['household_number']  = '0'
+        if not d['purok']:             d['purok']             = 'N/A'
+        if not d['meter_brand']:       d['meter_brand']       = 'Generic'
+        if not d['civil_status']:      d['civil_status']      = 'Single'
+        if not d['spouse_name']:       d['spouse_name']       = ''
+        if not d['suffix']:            d['suffix']            = ''
+        if not d['first_reading']:     d['first_reading']     = '0'
+        if not d['barangay']:          d['barangay']          = 'Unknown'
+
+        # Default gender to 'Male' if missing or invalid
+        if not d['gender'] or d['gender'].lower() not in VALID_GENDER:
+            d['gender'] = 'Male'
+
+        # Default usage_type to 'Residential' if missing or invalid
+        if not d['usage_type'] or d['usage_type'].lower() not in VALID_USAGE:
+            d['usage_type'] = 'Residential'
+
+        # Default civil_status to 'Single' if invalid value was given
+        if d['civil_status'].lower() not in VALID_CIVIL_STATUS:
+            d['civil_status'] = 'Single'
+
         d['status'] = d['status'].lower()
 
         # Proper casing for names
         first_name  = ' '.join(w.capitalize() for w in d['first_name'].split())
         last_name   = ' '.join(w.capitalize() for w in d['last_name'].split())
         middle_name = ' '.join(w.capitalize() for w in d['middle_name'].split()) if d['middle_name'] else None
-        
-        # Missing fields check - RELAXED for non-critical fields like phone/household
-        STRICT_REQUIRED = [
-            'first_name', 'last_name', 'birth_date', 'gender', 
-            'barangay', 'usage_type', 'serial_number', 'registration_date'
-        ]
+
+        # ── Only the absolute minimum is truly required: name + serial number ──
+        # birth_date and registration_date still need valid dates (model requires it),
+        # so we default them to today if blank rather than aborting the row.
+        STRICT_REQUIRED = ['first_name', 'last_name', 'serial_number']
         missing = [k for k in STRICT_REQUIRED if not d[k]]
         if missing:
-            hard_errors.append(f"Row {row_num}: Missing strictly required fields: {', '.join(missing)}")
+            hard_errors.append(f"Row {row_num}: Missing required fields: {', '.join(missing)}")
             continue
 
-        # Fill defaults for optional but missing fields (like N/A phone/purok/household)
-        if not d['phone_number']: d['phone_number'] = 'N/A'
-        if not d['household_number']: d['household_number'] = '0'
-        if not d['purok']: d['purok'] = 'N/A'
-        if not d['meter_brand']: d['meter_brand'] = 'Generic'
-
-        # Choice checks
-        gender = d['gender'].capitalize()
-        if gender.lower() not in VALID_GENDER:
-            hard_errors.append(f"Row {row_num}: Invalid gender '{d['gender']}'")
-            continue
-        
-        civil_status = d['civil_status'].capitalize()
-        if civil_status.lower() not in VALID_CIVIL_STATUS:
-            hard_errors.append(f"Row {row_num}: Invalid civil status '{d['civil_status']}'")
-            continue
-
-        usage_type = d['usage_type'].capitalize()
-        if usage_type.lower() not in VALID_USAGE:
-            hard_errors.append(f"Row {row_num}: Invalid usage type '{d['usage_type']}'")
-            continue
-
-        # Date parsing
-        def parse_date(s):
+        # Date parsing with fallback to today if blank
+        def parse_date(s, fallback=None):
+            if not s:
+                return fallback or _dt.today().date()
             for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%m-%d-%Y'):
                 try: return _dt.strptime(s, fmt).date()
                 except: continue
-            return None
+            return fallback or _dt.today().date()
 
         birth_date = parse_date(d['birth_date'])
-        if not birth_date:
-            hard_errors.append(f"Row {row_num}: Invalid birth_date '{d['birth_date']}'")
-            continue
-        
-        reg_date = parse_date(d['registration_date'])
-        if not reg_date:
-            hard_errors.append(f"Row {row_num}: Invalid registration_date '{d['registration_date']}'")
-            continue
+        reg_date   = parse_date(d['registration_date'])
+
+        # Final choice normalization
+        gender       = d['gender'].capitalize()
+        civil_status = d['civil_status'].capitalize()
+        usage_type   = d['usage_type'].capitalize()
 
         # Duplicate checks (In memory)
         sn = d['serial_number']
@@ -743,11 +747,11 @@ def import_consumers_csv(request):
             continue
         seen_serials_in_file.add(sn)
 
-        if (first_name.lower(), last_name.lower(), birth_date) in existing_entities:
+        if first_name and last_name and (first_name.lower(), last_name.lower(), birth_date) in existing_entities:
             skipped_rows.append(f"Row {row_num}: '{first_name} {last_name}' with this birth date already exists — skipped.")
             continue
 
-        # Validated data
+        # Collect validated/defaulted row for batch insert
         rows_data.append({
             'first_name': first_name, 'middle_name': middle_name, 'last_name': last_name,
             'suffix': SUFFIX_MAP.get(d['suffix'].lower(), ''),

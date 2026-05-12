@@ -516,12 +516,14 @@ def confirm_all_readings(request, barangay_id):
                 settings=setting
             )
 
+            # Billing period = previous month (reading in May → bill for April)
+            billing_month = reading.reading_date - relativedelta(months=1)
             bill = Bill.objects.create(
                 consumer=reading.consumer,
                 previous_reading=prev,
                 current_reading=reading,
-                billing_period=reading.reading_date.replace(day=billing_day),
-                due_date=reading.reading_date.replace(day=due_day),
+                billing_period=billing_month.replace(day=billing_day),
+                due_date=billing_month.replace(day=due_day),
                 consumption=cons,
                 # Store ACTUAL tier breakdown
                 tier1_consumption=breakdown['tier1_units'],
@@ -614,12 +616,14 @@ def confirm_all_readings_global(request):
                 settings=setting
             )
 
+            # Billing period = previous month (reading in May → bill for April)
+            billing_month = reading.reading_date - relativedelta(months=1)
             bill = Bill.objects.create(
                 consumer=consumer,
                 previous_reading=prev,
                 current_reading=reading,
-                billing_period=reading.reading_date.replace(day=billing_day),
-                due_date=reading.reading_date.replace(day=due_day),
+                billing_period=billing_month.replace(day=billing_day),
+                due_date=billing_month.replace(day=due_day),
                 consumption=cons,
                 # Store ACTUAL tier breakdown
                 tier1_consumption=breakdown['tier1_units'],
@@ -827,12 +831,14 @@ def confirm_reading(request, reading_id):
             settings=setting
         )
 
+        # Billing period = previous month (reading in May → bill for April)
+        billing_month = current.reading_date - relativedelta(months=1)
         bill = Bill.objects.create(
             consumer=consumer,
             previous_reading=previous,
             current_reading=current,
-            billing_period=current.reading_date.replace(day=billing_day),
-            due_date=current.reading_date.replace(day=due_day),
+            billing_period=billing_month.replace(day=billing_day),
+            due_date=billing_month.replace(day=due_day),
             consumption=consumption,
             tier1_consumption=breakdown['tier1_units'],
             tier1_amount=breakdown['tier1_amount'],

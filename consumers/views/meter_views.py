@@ -157,16 +157,20 @@ def meter_reading_overview(request):
     today = date.today()
     export_excel = request.GET.get('export', '')
 
-    # Month filter: accept ?month=2026-01 format, default to current month
+    # Month filter: accept ?month=2026-01 format, representing the BILLING PERIOD
     month_param = request.GET.get('month', '')
     if month_param:
         try:
             year, mon = month_param.split('-')
-            current_month = date(int(year), int(mon), 1)
+            billing_month = date(int(year), int(mon), 1)
+            # Readings for this billing month are taken in the NEXT month
+            current_month = billing_month + relativedelta(months=1)
         except (ValueError, TypeError):
             current_month = today.replace(day=1)
+            billing_month = current_month - relativedelta(months=1)
     else:
         current_month = today.replace(day=1)
+        billing_month = current_month - relativedelta(months=1)
 
     # Calculate the end of the selected month
     last_day = calendar.monthrange(current_month.year, current_month.month)[1]
@@ -253,7 +257,7 @@ def meter_reading_overview(request):
         # Title
         ws.merge_cells('A1:E1')
         title_cell = ws['A1']
-        title_cell.value = f"Meter Reading Overview - {current_month.strftime('%B %Y')}"
+        title_cell.value = f"Meter Reading Overview - Billing Period: {billing_month.strftime('%B %Y')}"
         title_cell.font = Font(bold=True, size=14)
         title_cell.alignment = Alignment(horizontal='center', vertical='center')
 
@@ -293,11 +297,12 @@ def meter_reading_overview(request):
         return response
 
     # Format month param for template links
-    month_filter_value = current_month.strftime('%Y-%m')
+    month_filter_value = billing_month.strftime('%Y-%m')
 
     context = {
         'barangay_data': barangay_data,
         'current_month': current_month,
+        'billing_month': billing_month,
         'month_filter_value': month_filter_value,
         'total_barangays': total_barangays,
         'total_consumers_sum': total_consumers_sum,
@@ -317,15 +322,18 @@ def barangay_meter_readings(request, barangay_id):
     barangay = get_object_or_404(Barangay, id=barangay_id)
     today = date.today()
 
-    # Month filter: accept ?month=2026-01 format
+    # Month filter: accept ?month=2026-01 format representing the BILLING PERIOD
     month_param = request.GET.get('month', '')
     filter_month = None
     month_start = None
     month_end = None
+    billing_month = None
     if month_param:
         try:
             year, mon = month_param.split('-')
-            month_start = date(int(year), int(mon), 1)
+            billing_month = date(int(year), int(mon), 1)
+            # Readings for this billing period happen in the next month
+            month_start = billing_month + relativedelta(months=1)
             last_day = calendar.monthrange(month_start.year, month_start.month)[1]
             month_end = date(month_start.year, month_start.month, last_day)
             filter_month = month_start
@@ -389,6 +397,7 @@ def barangay_meter_readings(request, barangay_id):
         'confirmed_count': confirmed_count,
         'no_reading_count': no_reading_count,
         'filter_month': filter_month,
+        'billing_month': billing_month,
         'month_filter_value': month_param,
     })
 
@@ -405,6 +414,7 @@ def barangay_meter_readings_print(request, barangay_id):
     barangay = get_object_or_404(Barangay, id=barangay_id)
     today = date.today()
     current_month = today.replace(day=1)
+    billing_month = current_month - relativedelta(months=1)
 
     # Get all active consumers in this barangay
     consumers = Consumer.objects.filter(barangay=barangay, status='active').select_related('barangay').order_by('id')
@@ -454,6 +464,7 @@ def barangay_meter_readings_print(request, barangay_id):
         'with_readings': with_readings,
         'no_readings': no_readings,
         'current_month': current_month,
+        'billing_month': billing_month,
         'generated_date': timezone.now(),
     }
 
@@ -672,7 +683,9 @@ def confirm_all_readings_global(request):
 @login_required
 def export_barangay_readings(request, barangay_id):
     barangay = get_object_or_404(Barangay, id=barangay_id)
-    current_month = date.today().replace(day=1)
+    today = date.today()
+    current_month = today.replace(day=1)
+    billing_month = current_month - relativedelta(months=1)
 
     # Get latest reading per consumer in this barangay
     consumer_ids = Consumer.objects.filter(barangay=barangay).values_list('id', flat=True)
@@ -745,7 +758,7 @@ def export_barangay_readings(request, barangay_id):
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename=Readings_{barangay.name}_{current_month.strftime("%Y-%m")}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename=Readings_{barangay.name}_Billing_{billing_month.strftime("%Y-%m")}.xlsx'
     wb.save(response)
     return response
 

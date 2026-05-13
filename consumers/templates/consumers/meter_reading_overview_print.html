@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Meter Reading Overview - {{ current_month|date:"F Y" }}</title>
+    <title>Meter Reading Overview - Billing Period: {{ billing_month|date:"F Y" }}</title>
     {% load static %}
     <style>
         body {
@@ -245,7 +245,7 @@
 <body>
     <!-- Print Instructions (Hidden on Print) -->
     <div class="no-print">
-        <h3>Meter Reading Overview - {{ current_month|date:"F Y" }}</h3>
+        <h3>Meter Reading Overview - Billing Period: {{ billing_month|date:"F Y" }}</h3>
         <p>
             <strong>Instructions:</strong> Press <kbd>Ctrl+P</kbd> or click the "Print Report" button below.
             This yellow box will disappear in the print view.
@@ -262,7 +262,7 @@
                 <p class="municipality">Balilihan, 6342, Bohol</p>
                 <p class="waterworks">BALILIHAN WATERWORKS</p>
                 <p class="report-title">Meter Reading Overview Report</p>
-                <p class="report-period">{{ current_month|date:"F Y" }}</p>
+                <p class="report-period">Billing Period: {{ billing_month|date:"F Y" }}</p>
             </div>
             <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="logo logo--circle">
         </div>

@@ -232,7 +232,7 @@
                 <p class="municipality">Balilihan, 6342, Bohol</p>
                 <p class="waterworks">BALILIHAN WATERWORKS</p>
                 <p class="report-title">{{ barangay.name }} - Meter Readings Report</p>
-                <p class="report-period">{{ current_month|date:"F Y" }}</p>
+                <p class="report-period">Billing Period: {{ billing_month|date:"F Y" }}</p>
             </div>
             <img src="{% static 'consumers/images/logo.png' %}" alt="Waterworks Logo" class="logo logo--circle">
         </div>

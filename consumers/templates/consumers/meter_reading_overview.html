@@ -13,7 +13,7 @@
                     <i class="bi bi-grid-3x3-gap-fill text-primary-600"></i>
                     Meter Reading Overview
                 </h2>
-                <p class="text-sm text-dark-500 mt-1">Track meter reading progress by barangay — {{ current_month|date:"F Y" }}</p>
+                <p class="text-sm text-dark-500 mt-1">Track meter reading progress by barangay for Billing Period: <span class="font-bold text-primary-600">{{ billing_month|date:"F Y" }}</span> (Readings taken in {{ current_month|date:"F Y" }})</p>
             </div>
             <div class="flex gap-2">
                 {% if pending_proof_readings_count %}
@@ -84,18 +84,18 @@
                     <select id="month-filter"
                             class="w-full px-4 py-3 border border-light-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                             onchange="applyYearMonthFilter()">
-                        <option value="01" {% if current_month.month == 1 %}selected{% endif %}>January</option>
-                        <option value="02" {% if current_month.month == 2 %}selected{% endif %}>February</option>
-                        <option value="03" {% if current_month.month == 3 %}selected{% endif %}>March</option>
-                        <option value="04" {% if current_month.month == 4 %}selected{% endif %}>April</option>
-                        <option value="05" {% if current_month.month == 5 %}selected{% endif %}>May</option>
-                        <option value="06" {% if current_month.month == 6 %}selected{% endif %}>June</option>
-                        <option value="07" {% if current_month.month == 7 %}selected{% endif %}>July</option>
-                        <option value="08" {% if current_month.month == 8 %}selected{% endif %}>August</option>
-                        <option value="09" {% if current_month.month == 9 %}selected{% endif %}>September</option>
-                        <option value="10" {% if current_month.month == 10 %}selected{% endif %}>October</option>
-                        <option value="11" {% if current_month.month == 11 %}selected{% endif %}>November</option>
-                        <option value="12" {% if current_month.month == 12 %}selected{% endif %}>December</option>
+                        <option value="01" {% if billing_month.month == 1 %}selected{% endif %}>January</option>
+                        <option value="02" {% if billing_month.month == 2 %}selected{% endif %}>February</option>
+                        <option value="03" {% if billing_month.month == 3 %}selected{% endif %}>March</option>
+                        <option value="04" {% if billing_month.month == 4 %}selected{% endif %}>April</option>
+                        <option value="05" {% if billing_month.month == 5 %}selected{% endif %}>May</option>
+                        <option value="06" {% if billing_month.month == 6 %}selected{% endif %}>June</option>
+                        <option value="07" {% if billing_month.month == 7 %}selected{% endif %}>July</option>
+                        <option value="08" {% if billing_month.month == 8 %}selected{% endif %}>August</option>
+                        <option value="09" {% if billing_month.month == 9 %}selected{% endif %}>September</option>
+                        <option value="10" {% if billing_month.month == 10 %}selected{% endif %}>October</option>
+                        <option value="11" {% if billing_month.month == 11 %}selected{% endif %}>November</option>
+                        <option value="12" {% if billing_month.month == 12 %}selected{% endif %}>December</option>
                     </select>
                 </div>
                 <div class="flex gap-3 items-end">
@@ -321,7 +321,7 @@ function resetAllFilters() {
 // Populate year dropdown dynamically (from 2020 to current year)
 (function() {
     const yearSelect = document.getElementById('year-filter');
-    const currentYear = {{ current_month.year }};
+    const currentYear = {{ billing_month.year }};
     const thisYear = new Date().getFullYear();
     const startYear = 2020;
 

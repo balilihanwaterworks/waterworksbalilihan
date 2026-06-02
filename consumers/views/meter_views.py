@@ -1339,12 +1339,14 @@ def confirm_selected_readings(request, barangay_id):
                 settings=setting
             )
 
+            # Billing period = previous month (reading in June → bill for May)
+            billing_month = reading.reading_date - relativedelta(months=1)
             Bill.objects.create(
                 consumer=consumer,
                 previous_reading=prev,
                 current_reading=reading,
-                billing_period=reading.reading_date.replace(day=billing_day),
-                due_date=reading.reading_date.replace(day=due_day),
+                billing_period=billing_month.replace(day=billing_day),
+                due_date=billing_month.replace(day=due_day),
                 consumption=cons,
                 # Store ACTUAL tier breakdown
                 tier1_consumption=breakdown['tier1_units'],

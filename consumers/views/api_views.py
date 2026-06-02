@@ -297,13 +297,15 @@ def api_submit_reading(request):
             if consumer.is_senior_citizen and consumption <= 30:
                 sc_discount = (Decimal(str(total_amount)) * Decimal('5') / Decimal('100')).quantize(Decimal('0.01'))
 
+            # Billing period = previous month (reading in June → bill for May)
+            billing_month = reading_date - relativedelta(months=1)
             # Create Bill automatically with ACTUAL tier breakdown (not averages)
             bill = Bill.objects.create(
                 consumer=consumer,
                 previous_reading=prev_reading_obj,
                 current_reading=reading,
-                billing_period=reading_date.replace(day=billing_day),
-                due_date=reading_date.replace(day=due_day),
+                billing_period=billing_month.replace(day=billing_day),
+                due_date=billing_month.replace(day=due_day),
                 consumption=consumption,
                 # Store ACTUAL tier breakdown
                 tier1_consumption=breakdown['tier1_units'],
@@ -651,13 +653,15 @@ def api_confirm_reading(request, reading_id):
         if consumer.is_senior_citizen and consumption <= 30:
             sc_discount = (total * Decimal('5') / Decimal('100')).quantize(Decimal('0.01'))
 
+        # Billing period = previous month (reading in June → bill for May)
+        billing_month = reading.reading_date - relativedelta(months=1)
         # Create bill
         bill = Bill.objects.create(
             consumer=consumer,
             previous_reading=prev,
             current_reading=reading,
-            billing_period=reading.reading_date.replace(day=billing_day),
-            due_date=reading.reading_date.replace(day=due_day),
+            billing_period=billing_month.replace(day=billing_day),
+            due_date=billing_month.replace(day=due_day),
             consumption=consumption,
             tier1_consumption=breakdown['tier1_units'],
             tier1_amount=breakdown['tier1_amount'],

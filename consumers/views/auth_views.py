@@ -220,22 +220,68 @@ def staff_logout(request):
     return redirect("consumers:staff_login")
 
 
+def send_email_notification(subject, html_message, plain_message, to_emails):
+    """
+    Sends an email using Resend API if configured, otherwise falls back to Django's SMTP backend.
+    This handles Render's free tier which blocks outbound SMTP ports.
+    """
+    from django.conf import settings
+    from django.core.mail import EmailMultiAlternatives
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Ensure to_emails is a list
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    resend_key = getattr(settings, 'RESEND_API_KEY', None)
+    if resend_key:
+        try:
+            import resend
+            resend.api_key = resend_key
+            params = {
+                "from": settings.DEFAULT_FROM_EMAIL,
+                "to": to_emails,
+                "subject": subject,
+                "html": html_message,
+                "text": plain_message,
+            }
+            resend.Emails.send(params)
+            return True
+        except Exception as e:
+            logger.error(f"Resend API error sending email to {to_emails}: {e}", exc_info=True)
+            raise e
+    else:
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=to_emails,
+            )
+            msg.attach_alternative(html_message, "text/html")
+            msg.send(fail_silently=False)
+            return True
+        except Exception as e:
+            logger.error(f"Gmail SMTP error sending email to {to_emails}: {e}", exc_info=True)
+            raise e
+
+
 def forgot_password_request(request):
     """
     Password reset request page for superuser/admin accounts.
-    Sends secure reset token via email to the user's registered Gmail account
-    using Django's built-in Gmail SMTP backend (EmailMultiAlternatives).
+    Sends secure reset token via email to the user's registered account.
+    Automatically handles Resend API for production (Render) and SMTP for local.
     """
     import logging
     from ..decorators import get_client_ip, get_user_agent
-    from django.core.mail import EmailMultiAlternatives
     from django.template.loader import render_to_string
 
     logger = logging.getLogger(__name__)
 
-    # Check if Gmail SMTP is configured
-    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Forgot Password: EMAIL_HOST_USER or EMAIL_HOST_PASSWORD is not set in .env")
+    # Check if we have either Resend or SMTP configured
+    if not getattr(settings, 'RESEND_API_KEY', None) and (not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD):
+        logger.warning("Forgot Password: No email backend configured (neither RESEND_API_KEY nor EMAIL_HOST_USER is set).")
         return render(request, 'consumers/forgot_password.html', {'email_disabled': True})
 
     if request.method == "POST":
@@ -282,16 +328,14 @@ def forgot_password_request(request):
             html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
             plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
 
-            # Send email via Django's built-in Gmail SMTP backend
+            # Send email using unified helper
             try:
-                msg = EmailMultiAlternatives(
+                send_email_notification(
                     subject='Password Reset Request - Balilihan Waterworks',
-                    body=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[user.email],
+                    html_message=html_message,
+                    plain_message=plain_message,
+                    to_emails=[user.email]
                 )
-                msg.attach_alternative(html_message, "text/html")
-                msg.send(fail_silently=False)
 
                 # Log the activity
                 UserActivity.objects.create(
@@ -308,7 +352,6 @@ def forgot_password_request(request):
 
             except Exception as e:
                 error_msg = str(e)
-                logger.error(f"Gmail SMTP error sending password reset to {user.email}: {error_msg}", exc_info=True)
                 messages.error(request, f"Failed to send password reset email. Please contact your administrator. ({error_msg[:100]})")
                 return redirect('consumers:forgot_password')
 
@@ -324,10 +367,8 @@ def forgot_password_request(request):
 def forgot_username(request):
     """
     Username recovery page — allows users to recover their username via email.
-    Sends recovery email via Django's built-in Gmail SMTP backend.
     """
     import logging
-    from django.core.mail import EmailMultiAlternatives
     from django.template.loader import render_to_string
 
     logger = logging.getLogger(__name__)
@@ -346,23 +387,22 @@ def forgot_username(request):
                 usernames = [u.username for u in users]
                 recovered_usernames_str = ", ".join(usernames)
 
-                # Send recovery email via Django's built-in Gmail SMTP backend
+                # Send recovery email using unified helper
                 try:
                     email_context = {'username': recovered_usernames_str}
                     html_message = render_to_string('consumers/emails/username_recovery_email.html', email_context)
                     plain_message = render_to_string('consumers/emails/username_recovery_email.txt', email_context)
 
-                    msg = EmailMultiAlternatives(
+                    send_email_notification(
                         subject='Username Recovery - Balilihan Waterworks',
-                        body=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[email],
+                        html_message=html_message,
+                        plain_message=plain_message,
+                        to_emails=[email]
                     )
-                    msg.attach_alternative(html_message, "text/html")
-                    msg.send(fail_silently=False)
 
                 except Exception as e:
-                    logger.error(f"Gmail SMTP error sending username recovery to {email}: {e}", exc_info=True)
+                    # Error is already logged in send_email_notification
+                    pass
         else:
             messages.error(request, "Please provide the registered email address.")
 
@@ -375,11 +415,9 @@ def forgot_username(request):
 def account_recovery(request):
     """
     Unified account recovery — recovers username and generates a password reset link.
-    Sends recovery email via Django's built-in Gmail SMTP backend.
     """
     import logging
     from ..decorators import get_client_ip
-    from django.core.mail import EmailMultiAlternatives
     from django.template.loader import render_to_string
 
     logger = logging.getLogger(__name__)
@@ -430,7 +468,7 @@ def account_recovery(request):
                 reverse('consumers:password_reset_confirm', kwargs={'token': token.token})
             )
 
-            # Send recovery email via Django's built-in Gmail SMTP backend
+            # Send recovery email using unified helper
             try:
                 email_context = {
                     'username': user.username,
@@ -442,14 +480,12 @@ def account_recovery(request):
                 html_message = render_to_string('consumers/emails/password_reset_email.html', email_context)
                 plain_message = render_to_string('consumers/emails/password_reset_email.txt', email_context)
 
-                msg = EmailMultiAlternatives(
+                send_email_notification(
                     subject='Account Recovery & Password Reset - Balilihan Waterworks',
-                    body=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[user.email],
+                    html_message=html_message,
+                    plain_message=plain_message,
+                    to_emails=[user.email]
                 )
-                msg.attach_alternative(html_message, "text/html")
-                msg.send(fail_silently=False)
 
                 # Log activity
                 UserActivity.objects.create(
@@ -460,7 +496,8 @@ def account_recovery(request):
                 )
 
             except Exception as e:
-                logger.error(f"Gmail SMTP error sending account recovery to {user.email}: {e}", exc_info=True)
+                # Error is already logged in send_email_notification
+                pass
 
         # Always show a generic success message to prevent enumeration
         messages.success(request, "If an account was found, a recovery email has been sent with further instructions.")

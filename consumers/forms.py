@@ -130,9 +130,7 @@ class ConsumerForm(forms.ModelForm):
         labels = {
             'first_reading': 'Previous Reading',
         }
-        help_texts = {
-            'first_reading': 'For old consumers, enter their last reading here. This will be the baseline for their first new meter reading.',
-        }
+
         widgets = {
             # Personal Information
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: capitalize;'}),

@@ -229,7 +229,7 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='').strip()
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='').strip()
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@balilihan-waterworks.com'
+DEFAULT_FROM_EMAIL = f'Balilihan Waterworks <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'noreply@balilihan-waterworks.com'
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_TIMEOUT = 10  # seconds
 

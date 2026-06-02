@@ -239,8 +239,16 @@ def send_email_notification(subject, html_message, plain_message, to_emails):
         try:
             import resend
             resend.api_key = resend_key
+            
+            # Resend does not allow sending from @gmail.com or other public domains.
+            # If the user hasn't configured a custom domain, we must use the test domain.
+            from_email = settings.DEFAULT_FROM_EMAIL
+            if 'gmail.com' in from_email.lower() or 'yahoo.com' in from_email.lower():
+                from_email = 'Balilihan Waterworks <onboarding@resend.dev>'
+                logger.warning("Using onboarding@resend.dev as sender because public domain was detected.")
+
             params = {
-                "from": settings.DEFAULT_FROM_EMAIL,
+                "from": from_email,
                 "to": to_emails,
                 "subject": subject,
                 "html": html_message,
